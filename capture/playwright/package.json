@@ -1,0 +1,20 @@
+{
+  "name": "stop-motion-ui-playwright-capture",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone, unattended Playwright capture backend for stop-motion-ui. Launches a real browser, drives a page, and writes a manifest.json + screenshots/ compatible with replay/ and replay-app/.",
+  "scripts": {
+    "postinstall": "playwright install chromium",
+    "capture:demo": "tsx src/capture-demo.ts",
+    "dry-run": "tsx dry-run/dry-run.ts"
+  },
+  "dependencies": {
+    "playwright": "^1.50.0",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

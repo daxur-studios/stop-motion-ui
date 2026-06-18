@@ -1,14 +1,22 @@
 # Roadmap / Future Ideas
 
-## Feature: TTS narration for replays
+## Feature: TTS narration for replays — ✅ Done
 
-- Use Daxur Daemon's local TTS capability (Chatterbox TTS) to generate spoken narration for replay sequences
-- Generate two variants per capture: a short version (concise) and a long version (detailed walkthrough)
-- Each event/step in the manifest gets an optional narration text field; that text is converted to a TTS audio clip per step
+- Uses Daxur Daemon's local TTS capability (Chatterbox TTS) to generate spoken narration for replay sequences
+- Two variants per event: a short version (concise) and a long version (detailed walkthrough) — `narrationShort` / `narrationLong` text fields on each manifest event
+- Audio is pre-generated and cached via `scripts/generate-narration.mjs` (not generated live in-browser) into `narrationAudioShort` / `narrationAudioLong` manifest fields
+- Implemented in both `replay/player.js` and `replay-app`'s `ReplayPlayerComponent`; narration on/off/short/long is a dropdown in both players
+- See ADR-004 for the timing-sync and playback-speed decisions
 
-### Open problem: timing sync
+### Timing sync — resolved
 
-- Each step has a visual duration (cursor movement, circle gesture, screenshot transition) and a narration audio duration (TTS clip length)
-- These durations are unlikely to match — narration might run longer or shorter than the visual action
-- Proposed approach: per step, duration = whichever is longer (visual action vs narration audio) — wait for both to finish before advancing to the next step in the sequence
-- Not yet decided: should visual actions ever be sped up/extended to better match narration length (e.g. slow down a cursor move so it doesn't finish way before the voice line), or always just wait at the end if the visual is shorter?
+- Per step, duration = whichever is longer (visual action vs narration audio) — an extra hold phase is appended after the visual action if narration runs longer, so playback always waits for both before advancing
+- Playback speed (0.5x–2x) applies uniformly to narration audio via `playbackRate`, matching the visual timeline; this is not pitch-corrected (see ADR-004 for why that's an acceptable tradeoff here)
+
+## Feature: Seeded deterministic cursor noise — ✅ Done
+
+- Optional numeric `seed` field on the manifest seeds a small deterministic PRNG (mulberry32, no new dependency)
+- Adds small wobble to bezier mouse-move control points and circle-gesture radius/angle, so replays don't look perfectly robotic
+- Same seed + same manifest always reproduces the same wobble (no `Math.random()`); cursor still arrives at the exact intended coordinates every time
+- Implemented identically in both `replay/player.js` and `replay-app`'s `ReplayPlayerComponent`
+- See ADR-004 for the algorithm choice and jitter-envelope design

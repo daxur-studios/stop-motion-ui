@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "capturedAt": "2026-06-18T19:23:17.710Z",
+  "backend": "playwright",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "seed": 42,
+  "events": [
+    {
+      "id": "nav-1",
+      "type": "navigate",
+      "timestamp": 3,
+      "cursor": {
+        "x": 0,
+        "y": 0,
+        "timestamp": 3
+      },
+      "screenshotRef": "screenshots/0001.jpg",
+      "url": "http://localhost:4221/"
+    },
+    {
+      "id": "click-2",
+      "type": "click",
+      "timestamp": 3,
+      "cursor": {
+        "x": 1180,
+        "y": 24,
+        "timestamp": 3
+      },
+      "screenshotRef": "screenshots/0002.jpg",
+      "target": "[data-testid=\"nav-demos\"]"
+    },
+    {
+      "id": "click-3",
+      "type": "click",
+      "timestamp": 3,
+      "cursor": {
+        "x": 360,
+        "y": 220,
+        "timestamp": 3
+      },
+      "screenshotRef": "screenshots/0003.jpg",
+      "target": "[data-testid=\"demo-counter-increment\"]"
+    },
+    {
+      "id": "circle-4",
+      "type": "circle",
+      "timestamp": 4,
+      "cursor": {
+        "x": 320,
+        "y": 190,
+        "timestamp": 4
+      },
+      "screenshotRef": "screenshots/0004.jpg",
+      "target": "[data-testid=\"demo-counter-value\"]",
+      "radius": 40,
+      "duration": 1200
+    }
+  ]
+}

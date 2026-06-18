@@ -6,6 +6,7 @@
     "width": 1280,
     "height": 800
   },
+  "seed": 1234,
   "events": [
     {
       "id": "nav-1",
@@ -13,7 +14,9 @@
       "timestamp": 0,
       "cursor": { "x": 0, "y": 0, "timestamp": 0 },
       "screenshotRef": "screenshots/0001.png",
-      "url": "https://example.test/dashboard"
+      "url": "https://example.test/dashboard",
+      "narrationShort": "Opening the dashboard.",
+      "narrationLong": "We start out on the main dashboard, which is where you'll land right after signing in."
     },
     {
       "id": "click-2",
@@ -21,7 +24,9 @@
       "timestamp": 1300,
       "cursor": { "x": 1120, "y": 80, "timestamp": 1300 },
       "screenshotRef": "screenshots/0002.png",
-      "target": "#settings-btn"
+      "target": "#settings-btn",
+      "narrationShort": "Open settings.",
+      "narrationLong": "Clicking the settings button in the top right corner to open up the configuration panel."
     },
     {
       "id": "circle-3",
@@ -31,7 +36,9 @@
       "screenshotRef": "screenshots/0002.png",
       "target": "#notifications-heading",
       "radius": 50,
-      "duration": 1600
+      "duration": 1600,
+      "narrationShort": "Here are your notification settings.",
+      "narrationLong": "This section controls your notification preferences — you can fine-tune exactly which alerts you want to receive and how."
     },
     {
       "id": "click-4",
@@ -39,7 +46,9 @@
       "timestamp": 4900,
       "cursor": { "x": 640, "y": 700, "timestamp": 4900 },
       "screenshotRef": "screenshots/0003.png",
-      "target": "#save-btn"
+      "target": "#save-btn",
+      "narrationShort": "Save changes.",
+      "narrationLong": "Finally, click save to apply the new settings and return to the dashboard."
     }
   ]
 }

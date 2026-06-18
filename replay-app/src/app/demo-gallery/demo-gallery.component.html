@@ -1,0 +1,83 @@
+<section class="demo-section" data-testid="demo-counter-section">
+  <h2>Counter</h2>
+  <p class="demo-count" data-testid="demo-counter-value">{{ count() }}</p>
+  <div class="demo-row">
+    <button type="button" data-testid="demo-counter-decrement" (click)="decrement()">-1</button>
+    <button type="button" data-testid="demo-counter-increment" (click)="increment()">+1</button>
+    <button type="button" data-testid="demo-counter-reset" (click)="resetCount()">Reset</button>
+  </div>
+</section>
+
+<section class="demo-section" data-testid="demo-form-section">
+  <h2>Contact form</h2>
+
+  @if (!submitted()) {
+    <form (submit)="$event.preventDefault(); submitForm()">
+      <label class="demo-field">
+        <span>Name</span>
+        <input
+          type="text"
+          data-testid="demo-form-name"
+          [value]="name()"
+          (input)="onNameInput($any($event.target).value)"
+        />
+      </label>
+      <label class="demo-field">
+        <span>Email</span>
+        <input
+          type="email"
+          data-testid="demo-form-email"
+          [value]="email()"
+          (input)="onEmailInput($any($event.target).value)"
+        />
+      </label>
+      <button
+        type="submit"
+        data-testid="demo-form-submit"
+        [disabled]="!formValid() || submitting()"
+      >
+        {{ submitting() ? 'Submitting…' : 'Submit' }}
+      </button>
+    </form>
+  } @else {
+    <p data-testid="demo-form-confirmation">Thanks, {{ name() }} — we'll reach you at {{ email() }}.</p>
+    <button type="button" data-testid="demo-form-reset" (click)="resetForm()">Start over</button>
+  }
+</section>
+
+<section class="demo-section" data-testid="demo-wizard-section">
+  <h2>Setup wizard</h2>
+
+  @if (!wizardDone()) {
+    <p class="demo-step-label" data-testid="demo-wizard-step-label">Step {{ wizardStep() }} of 3</p>
+
+    @switch (wizardStep()) {
+      @case (1) {
+        <p data-testid="demo-wizard-step-1">Step 1 — Choose a workspace name.</p>
+      }
+      @case (2) {
+        <p data-testid="demo-wizard-step-2">Step 2 — Invite a teammate.</p>
+      }
+      @case (3) {
+        <p data-testid="demo-wizard-step-3">Step 3 — Review and finish.</p>
+      }
+    }
+
+    <div class="demo-row">
+      <button
+        type="button"
+        data-testid="demo-wizard-back"
+        [disabled]="wizardStep() === 1"
+        (click)="wizardBack()"
+      >
+        Back
+      </button>
+      <button type="button" data-testid="demo-wizard-next" (click)="wizardNext()">
+        {{ wizardStep() === 3 ? 'Finish' : 'Next' }}
+      </button>
+    </div>
+  } @else {
+    <p data-testid="demo-wizard-done">All set up!</p>
+    <button type="button" data-testid="demo-wizard-restart" (click)="wizardRestart()">Restart</button>
+  }
+</section>

@@ -1,0 +1,26 @@
+<div class="app-shell" [attr.data-busy]="busyService.busy() ? 'true' : 'false'">
+  <nav class="top-nav" data-testid="app-nav">
+    <button
+      type="button"
+      data-testid="nav-replay"
+      [class.active]="view() === 'replay'"
+      (click)="setView('replay')"
+    >
+      Replay Player
+    </button>
+    <button
+      type="button"
+      data-testid="nav-demos"
+      [class.active]="view() === 'demos'"
+      (click)="setView('demos')"
+    >
+      Demo Gallery
+    </button>
+  </nav>
+
+  @if (view() === 'replay') {
+    <app-replay-player />
+  } @else {
+    <app-demo-gallery />
+  }
+</div>
