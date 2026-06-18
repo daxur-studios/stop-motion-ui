@@ -21,6 +21,12 @@
   const RIPPLE_MS = 420; // click-feedback ripple duration
   const CIRCLE_LOOPS = 1.6; // how many times the cursor orbits during a 'circle' gesture
 
+  // Wobble tuning (see ADR-004) — kept small so the cursor still reads as
+  // precise/intentional, just not laser-straight.
+  const MOVE_WOBBLE_MAX_PX = 22; // extra control-point jitter on top of the deterministic arc offset
+  const CIRCLE_RADIUS_WOBBLE_FRAC = 0.08; // +/- 8% of radius
+  const CIRCLE_ANGLE_WOBBLE_RAD = 0.12; // +/- ~7 degrees, eased to 0 at both ends
+
   const canvas = document.getElementById('stage');
   const ctx = canvas.getContext('2d');
   const playBtn = document.getElementById('play-btn');
@@ -28,6 +34,7 @@
   const timeLabel = document.getElementById('time-label');
   const speedSelect = document.getElementById('speed-select');
   const scenarioSelect = document.getElementById('scenario-select');
+  const narrationSelect = document.getElementById('narration-select');
   const statusEl = document.getElementById('status');
 
   /** @type {{phases: any[], totalDuration: number, baseDir: string}} */
@@ -39,6 +46,8 @@
   let currentTime = 0;
   let lastFrameTs = null;
   let speed = 1;
+  let narrationMode = 'off'; // 'off' | 'short' | 'long'
+  let lastPhaseIndex = -1; // tracks which phase's narration audio we've already triggered
 
   // ---------- math helpers ----------
 
@@ -48,6 +57,24 @@
 
   function clamp(v, lo, hi) {
     return Math.max(lo, Math.min(hi, v));
+  }
+
+  /**
+   * mulberry32 — tiny deterministic PRNG (see ADR-004). Returns a function
+   * that yields floats in [0, 1) on each call, fully determined by `seed`.
+   * Chosen over Math.random() specifically because demos must be
+   * reproducible: same manifest + same seed => same "natural" wobble every
+   * time it's replayed.
+   */
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0;
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
   }
 
   /** Quadratic bezier point at fraction t. */
@@ -66,7 +93,7 @@
    * same manifest always produce the same curve (and different segments
    * don't all bow the same way).
    */
-  function controlPointFor(from, to, seedTime) {
+  function controlPointFor(from, to, seedTime, jitter) {
     const mx = (from.x + to.x) / 2;
     const my = (from.y + to.y) / 2;
     const dx = to.x - from.x;
@@ -81,77 +108,182 @@
     const sign = Math.floor(seedTime / 137) % 2 === 0 ? 1 : -1;
     const magnitude = clamp(dist * 0.18, 12, 90) * sign;
 
-    return { x: mx + px * magnitude, y: my + py * magnitude };
+    let x = mx + px * magnitude;
+    let y = my + py * magnitude;
+
+    // Seeded "human" imperfection: a small extra offset on the control
+    // point only. Bezier endpoints are always exactly `from`/`to` regardless
+    // of the control point, so this never affects where the cursor actually
+    // lands — only the shape of the arc on the way there.
+    if (jitter) {
+      x += Math.cos(jitter.angle) * jitter.mag;
+      y += Math.sin(jitter.angle) * jitter.mag;
+    }
+
+    return { x, y };
+  }
+
+  /**
+   * Seeded radius/angle wobble for a 'circle' phase, eased to exactly 0 at
+   * both frac=0 and frac=1 (via a sin(frac*PI) envelope) so the gesture
+   * still starts and ends precisely on the nominal circle — only the path
+   * in between wobbles.
+   */
+  function circleWobble(jitter, frac) {
+    if (!jitter) return { radiusMul: 1, angleOffset: 0 };
+    const envelope = Math.sin(clamp(frac, 0, 1) * Math.PI);
+    const radiusMul = 1 + Math.sin(frac * jitter.radiusFreq * Math.PI * 2 + jitter.radiusPhase) * jitter.radiusAmp * envelope;
+    const angleOffset = Math.sin(frac * jitter.angleFreq * Math.PI * 2 + jitter.anglePhase) * jitter.angleAmp * envelope;
+    return { radiusMul, angleOffset };
   }
 
   // ---------- timeline construction ----------
 
   /**
    * Builds a flat list of "phases" covering the whole manifest:
-   *   { kind: 'move',   t0, t1, from, to, screenshot }
-   *   { kind: 'circle', t0, t1, center, radius, screenshot }
-   *   { kind: 'show',   t0, t1, x, y, screenshot }   // static hold (start/end)
+   *   { kind: 'move',   t0, t1, from, to, screenshot, jitter }
+   *   { kind: 'circle', t0, t1, center, radius, screenshot, jitter }
+   *   { kind: 'show',   t0, t1, x, y, screenshot, narration? }   // static hold (start/end/narration catch-up)
    *
    * The screenshot on a phase is whatever should be on-screen for the
    * *duration* of that phase. A new screenshot only becomes visible once its
    * owning event's timestamp is reached.
+   *
+   * `getNarration(ev)`, if provided, returns `{ ms, el }` (or null) for an
+   * event: `ms` is that narration clip's raw duration in milliseconds (used
+   * to decide whether to stretch the step), `el` is the <audio> element to
+   * play when the step starts (or null if no audio is loaded for it yet).
+   * Per the timing rule in docs/roadmap.md: a step's hold time is whichever
+   * is LONGER of its visual action duration or its narration duration — if
+   * narration runs long, an extra 'show' phase is appended right after the
+   * step's own phase(s) to make up the difference, before the next step's
+   * move begins. Phase t0/t1 are therefore *playback* time (already
+   * accounting for any such stretching), not raw manifest timestamps —
+   * though they're numerically identical to manifest timestamps whenever no
+   * narration is present, which is why this stays backward compatible with
+   * callers (e.g. test-scenarios/verify.js) that never pass `getNarration`.
    */
-  function buildTimeline(manifest) {
+  function buildTimeline(manifest, getNarration) {
     const events = manifest.events;
     if (!events || events.length === 0) {
       return { phases: [], totalDuration: 0 };
+    }
+    const narrationFor = getNarration || function () { return null; };
+    const rng = mulberry32((manifest.seed | 0) || 0);
+
+    function moveJitter() {
+      return { angle: rng() * Math.PI * 2, mag: rng() * MOVE_WOBBLE_MAX_PX };
+    }
+    function circleJitter() {
+      return {
+        radiusAmp: CIRCLE_RADIUS_WOBBLE_FRAC * (0.5 + rng() * 0.5),
+        radiusFreq: 2 + Math.floor(rng() * 2), // 2-3 wobble cycles across the gesture
+        radiusPhase: rng() * Math.PI * 2,
+        angleAmp: CIRCLE_ANGLE_WOBBLE_RAD * (0.5 + rng() * 0.5),
+        angleFreq: 2 + Math.floor(rng() * 2),
+        anglePhase: rng() * Math.PI * 2,
+      };
     }
 
     const phases = [];
     const first = events[0];
 
     // Hold on the very first frame from t=0 until the first event's own
-    // timestamp (covers manifests where event[0].timestamp > 0).
+    // timestamp (covers manifests where event[0].timestamp > 0). Stretched
+    // if event[0] carries narration that runs longer than that natural gap.
+    const firstNarration = narrationFor(first);
+    const firstHoldEnd = Math.max(first.timestamp, firstNarration ? firstNarration.ms : 0);
     phases.push({
       kind: 'show',
       t0: 0,
-      t1: first.timestamp,
+      t1: firstHoldEnd,
       x: first.cursor.x,
       y: first.cursor.y,
       screenshot: first.screenshotRef,
+      narration: firstNarration ? firstNarration.el : null,
     });
 
+    // `prev.t` is *playback* time (stretched so far); `prevManifestEnd` is
+    // the raw manifest-time end of the previous step (its timestamp, plus
+    // its own duration if it was a circle) — used only to compute each new
+    // step's natural, un-stretched visual duration.
     let prev = {
       x: first.cursor.x,
       y: first.cursor.y,
-      t: first.timestamp,
+      t: firstHoldEnd,
       screenshot: first.screenshotRef,
     };
+    let prevManifestEnd = first.type === 'circle' ? first.timestamp + first.duration : first.timestamp;
 
     for (let i = 1; i < events.length; i++) {
       const ev = events[i];
+      let visualDuration = 0;
+      let movePhaseRef = null;
 
       // Glide from wherever we ended up to this event's cursor point, while
       // showing whatever screenshot was current *before* this event landed.
-      if (ev.timestamp > prev.t) {
-        phases.push({
+      const moveDur = ev.timestamp - prevManifestEnd;
+      if (moveDur > 0) {
+        movePhaseRef = {
           kind: 'move',
           t0: prev.t,
-          t1: ev.timestamp,
+          t1: prev.t + moveDur,
           from: { x: prev.x, y: prev.y },
           to: { x: ev.cursor.x, y: ev.cursor.y },
           screenshot: prev.screenshot,
-        });
+          jitter: moveJitter(),
+        };
+        phases.push(movePhaseRef);
+        prev = { x: prev.x, y: prev.y, t: prev.t + moveDur, screenshot: prev.screenshot };
+        visualDuration += moveDur;
       }
 
+      let circlePhaseRef = null;
       if (ev.type === 'circle') {
-        const t1 = ev.timestamp + ev.duration;
-        phases.push({
+        const t1 = prev.t + ev.duration;
+        circlePhaseRef = {
           kind: 'circle',
-          t0: ev.timestamp,
+          t0: prev.t,
           t1: t1,
           center: { x: ev.cursor.x, y: ev.cursor.y },
           radius: ev.radius,
           screenshot: ev.screenshotRef,
-        });
+          jitter: circleJitter(),
+        };
+        phases.push(circlePhaseRef);
+        visualDuration += ev.duration;
         prev = { x: ev.cursor.x, y: ev.cursor.y, t: t1, screenshot: ev.screenshotRef };
+        prevManifestEnd = ev.timestamp + ev.duration;
       } else {
-        prev = { x: ev.cursor.x, y: ev.cursor.y, t: ev.timestamp, screenshot: ev.screenshotRef };
+        prev = { x: ev.cursor.x, y: ev.cursor.y, t: prev.t, screenshot: ev.screenshotRef };
+        prevManifestEnd = ev.timestamp;
+      }
+
+      // If this step's narration runs longer than its visual action, hold
+      // on the arrived-at frame for the difference before moving on.
+      const narration = narrationFor(ev);
+      const narrationMs = narration ? narration.ms : 0;
+      const extra = Math.max(0, narrationMs - visualDuration);
+
+      // Trigger narration at whichever phase starts this step (move, else
+      // circle, else — if the step has no visual duration at all — the
+      // extra hold phase below).
+      const narrationOwner = movePhaseRef || circlePhaseRef;
+      if (narration && narration.el && narrationOwner) {
+        narrationOwner.narration = narration.el;
+      }
+
+      if (extra > 0) {
+        phases.push({
+          kind: 'show',
+          t0: prev.t,
+          t1: prev.t + extra,
+          x: prev.x,
+          y: prev.y,
+          screenshot: prev.screenshot,
+          narration: narrationOwner ? null : narration ? narration.el : null,
+        });
+        prev = { x: prev.x, y: prev.y, t: prev.t + extra, screenshot: prev.screenshot };
       }
     }
 
@@ -170,11 +302,15 @@
     return { phases, totalDuration };
   }
 
-  function findPhase(phases, t) {
+  function findPhaseIndex(phases, t) {
     for (let i = 0; i < phases.length; i++) {
-      if (t < phases[i].t1 || i === phases.length - 1) return phases[i];
+      if (t < phases[i].t1 || i === phases.length - 1) return i;
     }
-    return phases[phases.length - 1];
+    return phases.length - 1;
+  }
+
+  function findPhase(phases, t) {
+    return phases[findPhaseIndex(phases, t)];
   }
 
   /** Resolves cursor {x,y} and the active screenshot path for time t. */
@@ -189,7 +325,7 @@
 
     if (phase.kind === 'move') {
       const eased = easeInOutCubic(frac);
-      const control = controlPointFor(phase.from, phase.to, phase.t0);
+      const control = controlPointFor(phase.from, phase.to, phase.t0, phase.jitter);
       const pos = quadBezier(phase.from, control, phase.to, eased);
       return { x: pos.x, y: pos.y, screenshot: phase.screenshot, ripple: null, orbit: null };
     }
@@ -198,9 +334,11 @@
       // Ease the angular speed in/out so the orbit doesn't snap to full
       // speed instantly — accelerate into the gesture, decelerate out.
       const eased = easeInOutCubic(frac);
-      const angle = -Math.PI / 2 + eased * Math.PI * 2 * CIRCLE_LOOPS;
-      const x = phase.center.x + Math.cos(angle) * phase.radius;
-      const y = phase.center.y + Math.sin(angle) * phase.radius;
+      const wobble = circleWobble(phase.jitter, frac);
+      const angle = -Math.PI / 2 + eased * Math.PI * 2 * CIRCLE_LOOPS + wobble.angleOffset;
+      const radius = phase.radius * wobble.radiusMul;
+      const x = phase.center.x + Math.cos(angle) * radius;
+      const y = phase.center.y + Math.sin(angle) * radius;
       return {
         x,
         y,
@@ -224,8 +362,41 @@
     });
   }
 
+  /**
+   * Loads an <audio> element far enough to know its duration (metadata
+   * load), without necessarily downloading the whole file. Resolves to null
+   * (rather than rejecting) on error so a single missing/broken narration
+   * clip doesn't block the rest of the scenario from loading — narration is
+   * an enhancement, not a hard requirement for playback.
+   */
+  function loadAudioMeta(src) {
+    return new Promise((resolve) => {
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.addEventListener('loadedmetadata', () => resolve(audio), { once: true });
+      audio.addEventListener('error', () => resolve(null), { once: true });
+      audio.src = src;
+    });
+  }
+
+  /** All currently-playing narration <audio> elements, so speed changes can retune them live. */
+  const activeNarrationAudio = new Set();
+
+  function stopAllNarration() {
+    for (const el of activeNarrationAudio) {
+      try {
+        el.pause();
+        el.currentTime = 0;
+      } catch (_e) {
+        // ignore — element may already be detached/broken
+      }
+    }
+    activeNarrationAudio.clear();
+  }
+
   async function loadScenario(scenarioId) {
     isPlaying = false;
+    stopAllNarration();
     playBtn.disabled = true;
     scrub.disabled = true;
     statusEl.textContent = 'Loading manifest for ' + scenarioId + '…';
@@ -247,7 +418,25 @@
     canvas.width = manifest.viewport.width;
     canvas.height = manifest.viewport.height;
 
-    const built = buildTimeline(manifest);
+    // Preload narration audio (if any, and if a narration mode other than
+    // 'off' is selected) so buildTimeline() can know each clip's duration
+    // up front — needed to decide whether a step's hold time must stretch.
+    // See docs/roadmap.md "Open problem: timing sync".
+    const narrationMap = new Map(); // event id -> { ms, el }
+    if (narrationMode !== 'off') {
+      statusEl.textContent = 'Loading narration audio…';
+      await Promise.all(
+        manifest.events.map(async (ev) => {
+          const ref = narrationMode === 'long' ? ev.narrationAudioLong : ev.narrationAudioShort;
+          if (!ref) return;
+          const el = await loadAudioMeta(baseDir + ref);
+          if (el) narrationMap.set(ev.id, { ms: el.duration * 1000, el });
+        })
+      );
+    }
+    const getNarration = (ev) => narrationMap.get(ev.id) || null;
+
+    const built = buildTimeline(manifest, getNarration);
     timeline = { ...built, baseDir };
 
     const refs = Array.from(new Set(manifest.events.map((e) => e.screenshotRef)));
@@ -268,6 +457,7 @@
 
     currentTime = 0;
     lastFrameTs = null;
+    lastPhaseIndex = -1;
     scrub.min = '0';
     scrub.max = String(Math.max(1, Math.round(timeline.totalDuration)));
     scrub.value = '0';
@@ -275,7 +465,8 @@
     playBtn.disabled = timeline.phases.length === 0;
     playBtn.textContent = 'Play';
     statusEl.textContent =
-      'Ready — ' + manifest.events.length + ' events, ' + Math.round(timeline.totalDuration) + 'ms';
+      'Ready — ' + manifest.events.length + ' events, ' + Math.round(timeline.totalDuration) + 'ms' +
+      (narrationMap.size > 0 ? ', ' + narrationMap.size + ' narration clip(s)' : '');
     render();
   }
 
@@ -365,6 +556,52 @@
     if (!isScrubbing) scrub.value = String(Math.round(currentTime));
   }
 
+  // ---------- narration playback sync ----------
+
+  /**
+   * Plays a step's narration audio at the same rate as visual playback, so
+   * a 2x-speed replay also sounds 2x faster (simple playbackRate change —
+   * pitch will rise/fall with it; not pitch-corrected, see ADR-004 for why
+   * that's an acceptable tradeoff here).
+   */
+  function playNarration(el) {
+    if (!el) return;
+    try {
+      el.currentTime = 0;
+      el.playbackRate = clamp(speed, 0.25, 4);
+      activeNarrationAudio.add(el);
+      el.addEventListener('ended', () => activeNarrationAudio.delete(el), { once: true });
+      const playResult = el.play();
+      if (playResult && typeof playResult.catch === 'function') {
+        playResult.catch(() => activeNarrationAudio.delete(el));
+      }
+    } catch (_e) {
+      activeNarrationAudio.delete(el);
+    }
+  }
+
+  function pauseAllNarration() {
+    for (const el of activeNarrationAudio) {
+      try {
+        el.pause();
+      } catch (_e) {
+        // ignore
+      }
+    }
+  }
+
+  /** Fires narration for every phase between (lastPhaseIndex, newIndex], in order, moving forward only. */
+  function advanceNarration(newIndex) {
+    if (!timeline) return;
+    if (newIndex > lastPhaseIndex) {
+      for (let i = Math.max(lastPhaseIndex + 1, 0); i <= newIndex; i++) {
+        const phase = timeline.phases[i];
+        if (phase && phase.narration) playNarration(phase.narration);
+      }
+    }
+    lastPhaseIndex = newIndex;
+  }
+
   // ---------- playback loop ----------
 
   let isScrubbing = false;
@@ -379,6 +616,10 @@
         currentTime = timeline.totalDuration;
         isPlaying = false;
         playBtn.textContent = 'Play';
+        pauseAllNarration();
+      }
+      if (timeline.phases.length > 0) {
+        advanceNarration(findPhaseIndex(timeline.phases, currentTime));
       }
     } else {
       lastFrameTs = null;
@@ -391,9 +632,23 @@
 
   playBtn.addEventListener('click', () => {
     if (!timeline) return;
-    if (currentTime >= timeline.totalDuration) currentTime = 0; // restart if at end
+    if (currentTime >= timeline.totalDuration) {
+      currentTime = 0; // restart if at end
+      lastPhaseIndex = -1;
+    }
     isPlaying = !isPlaying;
     playBtn.textContent = isPlaying ? 'Pause' : 'Play';
+    if (isPlaying) {
+      for (const el of activeNarrationAudio) {
+        try {
+          el.play();
+        } catch (_e) {
+          // ignore
+        }
+      }
+    } else {
+      pauseAllNarration();
+    }
   });
 
   scrub.addEventListener('input', () => {
@@ -401,6 +656,8 @@
     currentTime = Number(scrub.value);
     isPlaying = false;
     playBtn.textContent = 'Play';
+    stopAllNarration();
+    if (timeline) lastPhaseIndex = findPhaseIndex(timeline.phases, currentTime);
     render();
   });
   scrub.addEventListener('change', () => {
@@ -409,11 +666,21 @@
 
   speedSelect.addEventListener('change', () => {
     speed = Number(speedSelect.value);
+    for (const el of activeNarrationAudio) {
+      el.playbackRate = clamp(speed, 0.25, 4);
+    }
   });
 
   scenarioSelect.addEventListener('change', () => {
     loadScenario(scenarioSelect.value);
   });
+
+  if (narrationSelect) {
+    narrationSelect.addEventListener('change', () => {
+      narrationMode = narrationSelect.value;
+      loadScenario(scenarioSelect.value);
+    });
+  }
 
   // ---------- boot ----------
 
@@ -433,6 +700,6 @@
   // without a browser. `module` doesn't exist in a browser <script>, so this
   // is a no-op there.
   if (typeof module !== 'undefined') {
-    module.exports = { buildTimeline, sampleAt, easeInOutCubic };
+    module.exports = { buildTimeline, sampleAt, easeInOutCubic, mulberry32 };
   }
 })();

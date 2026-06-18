@@ -21,6 +21,21 @@ interface BaseEvent {
    * the same settings Daxur-Daemon's `media compress` command uses. See ADR-003.
    */
   screenshotRef: string;
+  /**
+   * Optional narration text for this step, in a concise and a detailed
+   * flavor. Either or both may be present. Converted to audio by
+   * `scripts/generate-narration.mjs` via Daxur-Daemon's local Chatterbox TTS
+   * server — see ADR-004 and docs/roadmap.md.
+   */
+  narrationShort?: string;
+  narrationLong?: string;
+  /**
+   * Relative path (alongside the manifest, e.g. `narration/click-2-short.wav`)
+   * to the pre-generated audio for `narrationShort`/`narrationLong`. Filled in
+   * by `scripts/generate-narration.mjs`; absent until that script has run.
+   */
+  narrationAudioShort?: string;
+  narrationAudioLong?: string;
 }
 
 export interface ClickAction extends BaseEvent {
@@ -60,5 +75,13 @@ export interface Manifest {
     width: number;
     height: number;
   };
+  /**
+   * Seeds the small deterministic PRNG (mulberry32 — see ADR-004) used to add
+   * natural-looking imperfections to cursor movement (bezier control-point
+   * wobble, circle-gesture radius/angle wobble) without affecting where the
+   * cursor actually ends up. Same seed + same manifest always replays with
+   * the same wobble. Optional — defaults to 0 if omitted.
+   */
+  seed?: number;
   events: ManifestEvent[];
 }
