@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "capturedAt": "2026-06-18T12:00:00.000Z",
+  "backend": "chrome-mcp",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "events": [
+    {
+      "id": "nav-1",
+      "type": "navigate",
+      "timestamp": 0,
+      "cursor": { "x": 0, "y": 0, "timestamp": 0 },
+      "screenshotRef": "screenshots/0001.png",
+      "url": "https://example.test/dashboard"
+    },
+    {
+      "id": "click-2",
+      "type": "click",
+      "timestamp": 1300,
+      "cursor": { "x": 1120, "y": 80, "timestamp": 1300 },
+      "screenshotRef": "screenshots/0002.png",
+      "target": "#settings-btn"
+    },
+    {
+      "id": "circle-3",
+      "type": "circle",
+      "timestamp": 2200,
+      "cursor": { "x": 640, "y": 220, "timestamp": 2200 },
+      "screenshotRef": "screenshots/0002.png",
+      "target": "#notifications-heading",
+      "radius": 50,
+      "duration": 1600
+    },
+    {
+      "id": "click-4",
+      "type": "click",
+      "timestamp": 4900,
+      "cursor": { "x": 640, "y": 700, "timestamp": 4900 },
+      "screenshotRef": "screenshots/0003.png",
+      "target": "#save-btn"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+<header>
+  <h1>Stop-Motion UI — Replay Player (Angular)</h1>
+</header>
+
+<div id="stage-wrap">
+  <canvas #stage id="stage" width="1280" height="800"></canvas>
+</div>
+
+<div id="status">{{ status() }}</div>
+
+<div id="controls">
+  <button id="play-btn" [disabled]="!ready()" (click)="togglePlay()">
+    {{ isPlaying() ? 'Pause' : 'Play' }}
+  </button>
+
+  <input
+    id="scrub"
+    type="range"
+    min="0"
+    [max]="Math.max(1, Math.round(totalDurationMs()))"
+    [value]="currentTimeMs()"
+    [disabled]="!ready()"
+    (input)="onScrubInput($event)"
+    (change)="onScrubChange()"
+  />
+
+  <span id="time-label">{{ timeLabel() }}</span>
+
+  <select id="speed-select" [value]="speed()" (change)="onSpeedChange($event)">
+    <option value="0.5">0.5x</option>
+    <option value="1">1x</option>
+    <option value="1.5">1.5x</option>
+    <option value="2">2x</option>
+  </select>
+
+  <select id="scenario-select" [value]="scenario()" (change)="onScenarioChange($event)">
+    <option value="scenario-1">Scenario 1 — Dashboard settings</option>
+    <option value="scenario-2">Scenario 2 — Onboarding wizard</option>
+    <option value="scenario-3">Scenario 3 — Checkout flow</option>
+  </select>
+</div>
