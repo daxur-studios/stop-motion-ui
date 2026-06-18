@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "capturedAt": "2026-06-18T12:10:00.000Z",
+  "backend": "playwright",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "events": [
+    {
+      "id": "nav-1",
+      "type": "navigate",
+      "timestamp": 0,
+      "cursor": { "x": 0, "y": 0, "timestamp": 0 },
+      "screenshotRef": "screenshots/0001.png",
+      "url": "https://example.test/cart"
+    },
+    {
+      "id": "click-2",
+      "type": "click",
+      "timestamp": 1400,
+      "cursor": { "x": 1120, "y": 740, "timestamp": 1400 },
+      "screenshotRef": "screenshots/0002.png",
+      "target": "#checkout-btn"
+    },
+    {
+      "id": "circle-3",
+      "type": "circle",
+      "timestamp": 2350,
+      "cursor": { "x": 640, "y": 420, "timestamp": 2350 },
+      "screenshotRef": "screenshots/0002.png",
+      "target": "#promo-field",
+      "radius": 55,
+      "duration": 1500
+    },
+    {
+      "id": "click-4",
+      "type": "click",
+      "timestamp": 4750,
+      "cursor": { "x": 640, "y": 740, "timestamp": 4750 },
+      "screenshotRef": "screenshots/0003.png",
+      "target": "#place-order-btn"
+    }
+  ]
+}

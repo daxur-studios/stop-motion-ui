@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "capturedAt": "2026-06-18T12:57:11.468Z",
+  "backend": "chrome-mcp",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "events": [
+    {
+      "id": "nav-1",
+      "type": "navigate",
+      "timestamp": 1,
+      "cursor": {
+        "x": 0,
+        "y": 0,
+        "timestamp": 1
+      },
+      "screenshotRef": "screenshots/0001.png",
+      "url": "https://example.com"
+    },
+    {
+      "id": "click-2",
+      "type": "click",
+      "timestamp": 1,
+      "cursor": {
+        "x": 420,
+        "y": 310,
+        "timestamp": 1
+      },
+      "screenshotRef": "screenshots/0002.png",
+      "target": "a:has-text(\"More information...\")"
+    },
+    {
+      "id": "nav-3",
+      "type": "navigate",
+      "timestamp": 1,
+      "cursor": {
+        "x": 0,
+        "y": 0,
+        "timestamp": 1
+      },
+      "screenshotRef": "screenshots/0003.png",
+      "url": "https://example.com"
+    }
+  ]
+}
