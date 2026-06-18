@@ -12,43 +12,67 @@
       "id": "nav-1",
       "type": "navigate",
       "timestamp": 0,
-      "cursor": { "x": 0, "y": 0, "timestamp": 0 },
+      "cursor": {
+        "x": 0,
+        "y": 0,
+        "timestamp": 0
+      },
       "screenshotRef": "screenshots/0001.png",
       "url": "https://example.test/dashboard",
       "narrationShort": "Opening the dashboard.",
-      "narrationLong": "We start out on the main dashboard, which is where you'll land right after signing in."
+      "narrationLong": "We start out on the main dashboard, which is where you'll land right after signing in.",
+      "narrationAudioShort": "narration/nav-1-short.wav",
+      "narrationAudioLong": "narration/nav-1-long.wav"
     },
     {
       "id": "click-2",
       "type": "click",
       "timestamp": 1300,
-      "cursor": { "x": 1120, "y": 80, "timestamp": 1300 },
+      "cursor": {
+        "x": 1120,
+        "y": 80,
+        "timestamp": 1300
+      },
       "screenshotRef": "screenshots/0002.png",
       "target": "#settings-btn",
       "narrationShort": "Open settings.",
-      "narrationLong": "Clicking the settings button in the top right corner to open up the configuration panel."
+      "narrationLong": "Clicking the settings button in the top right corner to open up the configuration panel.",
+      "narrationAudioShort": "narration/click-2-short.wav",
+      "narrationAudioLong": "narration/click-2-long.wav"
     },
     {
       "id": "circle-3",
       "type": "circle",
       "timestamp": 2200,
-      "cursor": { "x": 640, "y": 220, "timestamp": 2200 },
+      "cursor": {
+        "x": 640,
+        "y": 220,
+        "timestamp": 2200
+      },
       "screenshotRef": "screenshots/0002.png",
       "target": "#notifications-heading",
       "radius": 50,
       "duration": 1600,
       "narrationShort": "Here are your notification settings.",
-      "narrationLong": "This section controls your notification preferences — you can fine-tune exactly which alerts you want to receive and how."
+      "narrationLong": "This section controls your notification preferences — you can fine-tune exactly which alerts you want to receive and how.",
+      "narrationAudioShort": "narration/circle-3-short.wav",
+      "narrationAudioLong": "narration/circle-3-long.wav"
     },
     {
       "id": "click-4",
       "type": "click",
       "timestamp": 4900,
-      "cursor": { "x": 640, "y": 700, "timestamp": 4900 },
+      "cursor": {
+        "x": 640,
+        "y": 700,
+        "timestamp": 4900
+      },
       "screenshotRef": "screenshots/0003.png",
       "target": "#save-btn",
       "narrationShort": "Save changes.",
-      "narrationLong": "Finally, click save to apply the new settings and return to the dashboard."
+      "narrationLong": "Finally, click save to apply the new settings and return to the dashboard.",
+      "narrationAudioShort": "narration/click-4-short.wav",
+      "narrationAudioLong": "narration/click-4-long.wav"
     }
   ]
 }

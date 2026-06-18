@@ -32,6 +32,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*",
+                "input": "../replay/test-scenarios",
+                "output": "test-scenarios"
               }
             ],
             "styles": ["src/styles.scss"]
