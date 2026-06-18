@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "capturedAt": "2026-06-18T19:23:17.710Z",
+  "capturedAt": "2026-06-18T20:06:13.759Z",
   "backend": "playwright",
   "viewport": {
     "width": 1280,
@@ -11,11 +11,11 @@
     {
       "id": "nav-1",
       "type": "navigate",
-      "timestamp": 3,
+      "timestamp": 10,
       "cursor": {
         "x": 0,
         "y": 0,
-        "timestamp": 3
+        "timestamp": 10
       },
       "screenshotRef": "screenshots/0001.jpg",
       "url": "http://localhost:4221/"
@@ -23,11 +23,11 @@
     {
       "id": "click-2",
       "type": "click",
-      "timestamp": 3,
+      "timestamp": 15,
       "cursor": {
         "x": 1180,
         "y": 24,
-        "timestamp": 3
+        "timestamp": 15
       },
       "screenshotRef": "screenshots/0002.jpg",
       "target": "[data-testid=\"nav-demos\"]"
@@ -35,11 +35,11 @@
     {
       "id": "click-3",
       "type": "click",
-      "timestamp": 3,
+      "timestamp": 20,
       "cursor": {
         "x": 360,
         "y": 220,
-        "timestamp": 3
+        "timestamp": 20
       },
       "screenshotRef": "screenshots/0003.jpg",
       "target": "[data-testid=\"demo-counter-increment\"]"
@@ -47,11 +47,11 @@
     {
       "id": "circle-4",
       "type": "circle",
-      "timestamp": 4,
+      "timestamp": 24,
       "cursor": {
         "x": 320,
         "y": 190,
-        "timestamp": 4
+        "timestamp": 24
       },
       "screenshotRef": "screenshots/0004.jpg",
       "target": "[data-testid=\"demo-counter-value\"]",

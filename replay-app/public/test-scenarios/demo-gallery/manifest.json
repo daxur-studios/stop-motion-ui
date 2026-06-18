@@ -1,0 +1,122 @@
+{
+  "version": "1.0.0",
+  "capturedAt": "2026-06-18T20:06:31.779Z",
+  "backend": "playwright",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "seed": 42,
+  "events": [
+    {
+      "id": "nav-1",
+      "type": "navigate",
+      "timestamp": 1522,
+      "cursor": {
+        "x": 0,
+        "y": 0,
+        "timestamp": 1522
+      },
+      "screenshotRef": "screenshots/0001.jpg",
+      "url": "http://localhost:4221/"
+    },
+    {
+      "id": "click-2",
+      "type": "click",
+      "timestamp": 1753,
+      "cursor": {
+        "x": 699,
+        "y": 29,
+        "timestamp": 1753
+      },
+      "screenshotRef": "screenshots/0002.jpg",
+      "target": "[data-testid=\"nav-demos\"]"
+    },
+    {
+      "id": "click-3",
+      "type": "click",
+      "timestamp": 1962,
+      "cursor": {
+        "x": 411,
+        "y": 156,
+        "timestamp": 1962
+      },
+      "screenshotRef": "screenshots/0003.jpg",
+      "target": "[data-testid=\"demo-counter-increment\"]"
+    },
+    {
+      "id": "click-4",
+      "type": "click",
+      "timestamp": 2158,
+      "cursor": {
+        "x": 411,
+        "y": 156,
+        "timestamp": 2158
+      },
+      "screenshotRef": "screenshots/0004.jpg",
+      "target": "[data-testid=\"demo-counter-increment\"]"
+    },
+    {
+      "id": "circle-5",
+      "type": "circle",
+      "timestamp": 2313,
+      "cursor": {
+        "x": 640,
+        "y": 110,
+        "timestamp": 2313
+      },
+      "screenshotRef": "screenshots/0005.jpg",
+      "target": "[data-testid=\"demo-counter-value\"]",
+      "radius": 40,
+      "duration": 1200
+    },
+    {
+      "id": "click-6",
+      "type": "click",
+      "timestamp": 3017,
+      "cursor": {
+        "x": 374,
+        "y": 386,
+        "timestamp": 3017
+      },
+      "screenshotRef": "screenshots/0006.jpg",
+      "target": "[data-testid=\"demo-form-submit\"]"
+    },
+    {
+      "id": "click-7",
+      "type": "click",
+      "timestamp": 3166,
+      "cursor": {
+        "x": 434,
+        "y": 471,
+        "timestamp": 3166
+      },
+      "screenshotRef": "screenshots/0007.jpg",
+      "target": "[data-testid=\"demo-wizard-next\"]"
+    },
+    {
+      "id": "click-8",
+      "type": "click",
+      "timestamp": 3303,
+      "cursor": {
+        "x": 434,
+        "y": 471,
+        "timestamp": 3303
+      },
+      "screenshotRef": "screenshots/0008.jpg",
+      "target": "[data-testid=\"demo-wizard-next\"]"
+    },
+    {
+      "id": "click-9",
+      "type": "click",
+      "timestamp": 3438,
+      "cursor": {
+        "x": 438,
+        "y": 471,
+        "timestamp": 3438
+      },
+      "screenshotRef": "screenshots/0009.jpg",
+      "target": "[data-testid=\"demo-wizard-next\"]"
+    }
+  ]
+}

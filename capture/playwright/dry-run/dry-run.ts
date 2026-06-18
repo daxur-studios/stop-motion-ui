@@ -8,36 +8,44 @@
 //
 // Run: npm run dry-run   (from capture/playwright/)
 
+import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
 import { CaptureSession } from '../src/capture-session.js';
 
-const outDir = new URL('./output', import.meta.url).pathname;
+// fileURLToPath (not .pathname) — on Windows, .pathname on a file:// URL
+// yields a POSIX-style "/D:/code/..." string, which Node's path resolver
+// then mis-resolves by re-prepending the cwd's drive (-> "D:\D:\code\...").
+// fileURLToPath handles the platform-specific conversion correctly.
+const outDir = fileURLToPath(new URL('./output', import.meta.url));
 const session = new CaptureSession({ outDir, viewport: { width: 1280, height: 800 }, seed: 42 });
 
-function fakeRawScreenshot(): Buffer {
-  // 1x1px placeholder PNG bytes, standing in for what page.screenshot() would return.
-  return Buffer.from(
-    '89504e470d0a1a0a0000000d49484452000000010000000108020000009077' +
-      '53de0000000c4944415478da6360000002000155027f72ac0000000049454e' +
-      '44ae426082',
-    'hex'
-  );
+async function fakeRawScreenshot(): Promise<Buffer> {
+  // 1x1px placeholder PNG, standing in for what page.screenshot() would
+  // return. Generated via sharp itself (already a real dependency here)
+  // rather than hand-rolled hex bytes — a hand-rolled minimal PNG previously
+  // used here turned out to be malformed and tripped libspng on decode.
+  return sharp({
+    create: { width: 1, height: 1, channels: 3, background: { r: 0, g: 0, b: 0 } },
+  })
+    .png()
+    .toBuffer();
 }
 
 async function main() {
-  let ref = await session.saveScreenshot(fakeRawScreenshot());
+  let ref = await session.saveScreenshot(await fakeRawScreenshot());
   session.addNavigate({ url: 'http://localhost:4221/', cursor: { x: 0, y: 0 }, screenshotRef: ref });
 
-  ref = await session.saveScreenshot(fakeRawScreenshot());
+  ref = await session.saveScreenshot(await fakeRawScreenshot());
   session.addClick({ target: '[data-testid="nav-demos"]', cursor: { x: 1180, y: 24 }, screenshotRef: ref });
 
-  ref = await session.saveScreenshot(fakeRawScreenshot());
+  ref = await session.saveScreenshot(await fakeRawScreenshot());
   session.addClick({
     target: '[data-testid="demo-counter-increment"]',
     cursor: { x: 360, y: 220 },
     screenshotRef: ref,
   });
 
-  ref = await session.saveScreenshot(fakeRawScreenshot());
+  ref = await session.saveScreenshot(await fakeRawScreenshot());
   session.addCircle({
     target: '[data-testid="demo-counter-value"]',
     radius: 40,
