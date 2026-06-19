@@ -1,0 +1,125 @@
+<section class="ks-section" data-testid="kitchen-sink-intro">
+  <h2>Kitchen Sink</h2>
+  <p>
+    Reference fixture for capture/replay rough edges — not a polished demo.
+    Scroll down to reach every element below; nothing later on this page is
+    visible without scrolling at the default 1280×800 viewport.
+  </p>
+</section>
+
+<section class="ks-filler" data-testid="kitchen-sink-filler-1">
+  @for (paragraph of fillerParagraphs; track paragraph) {
+    <p>{{ paragraph }}</p>
+  }
+</section>
+
+<section class="ks-section" data-testid="kitchen-sink-text-section">
+  <h2>Plain text input</h2>
+  <label class="ks-field">
+    <span>Your name</span>
+    <input
+      type="text"
+      data-testid="kitchen-sink-text-input"
+      [value]="textValue()"
+      (input)="onTextInput($any($event.target).value)"
+    />
+  </label>
+  <p data-testid="kitchen-sink-text-value">Value: {{ textValue() || '(empty)' }}</p>
+</section>
+
+<section class="ks-section" data-testid="kitchen-sink-textarea-section">
+  <h2>Textarea</h2>
+  <label class="ks-field">
+    <span>Notes</span>
+    <textarea
+      rows="4"
+      data-testid="kitchen-sink-textarea"
+      [value]="notesValue()"
+      (input)="onNotesInput($any($event.target).value)"
+    ></textarea>
+  </label>
+</section>
+
+<section class="ks-filler" data-testid="kitchen-sink-filler-2">
+  @for (paragraph of fillerParagraphs; track paragraph) {
+    <p>{{ paragraph }}</p>
+  }
+</section>
+
+<section class="ks-section" data-testid="kitchen-sink-select-section">
+  <h2>Mat select</h2>
+  <mat-form-field>
+    <mat-label>Choose an option</mat-label>
+    <mat-select data-testid="kitchen-sink-select" [(value)]="selectedOption">
+      @for (option of selectOptions; track option.value) {
+        <mat-option [value]="option.value" [attr.data-testid]="'kitchen-sink-select-option-' + option.value">
+          {{ option.label }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <p data-testid="kitchen-sink-select-value">Selected: {{ selectedOption() }}</p>
+</section>
+
+<section class="ks-filler" data-testid="kitchen-sink-filler-3">
+  @for (paragraph of fillerParagraphs; track paragraph) {
+    <p>{{ paragraph }}</p>
+  }
+</section>
+
+<section class="ks-section" data-testid="kitchen-sink-async-section">
+  <h2>Long async action</h2>
+  <p>
+    Simulates a ~{{ asyncDurationLabel }} network/processing wait. Append
+    <code>?fastAsync=1</code> (or <code>?asyncDurationMs=2000</code>) to the
+    page URL to shorten this for quick local iteration.
+  </p>
+
+  <button
+    type="button"
+    data-testid="kitchen-sink-async-trigger"
+    [disabled]="asyncActive()"
+    (click)="runAsyncAction()"
+  >
+    {{ asyncActive() ? 'Loading…' : 'Start long task' }}
+  </button>
+
+  @if (asyncActive()) {
+    <div
+      class="ks-async-indicators"
+      data-testid="kitchen-sink-async-active"
+      [attr.data-kitchen-sink-async-active]="'true'"
+    >
+      <mat-progress-bar
+        mode="determinate"
+        [value]="asyncProgressPercent()"
+        data-testid="kitchen-sink-progress-bar"
+      ></mat-progress-bar>
+      <mat-progress-spinner
+        mode="indeterminate"
+        [diameter]="32"
+        data-testid="kitchen-sink-progress-spinner"
+      ></mat-progress-spinner>
+      <p data-testid="kitchen-sink-async-status">Loading… {{ asyncProgressPercent() }}%</p>
+    </div>
+  }
+
+  @if (asyncResult()) {
+    <p data-testid="kitchen-sink-async-result">{{ asyncResult() }}</p>
+  }
+</section>
+
+<section class="ks-filler" data-testid="kitchen-sink-filler-4">
+  @for (paragraph of fillerParagraphs; track paragraph) {
+    <p>{{ paragraph }}</p>
+  }
+</section>
+
+<section class="ks-section" data-testid="kitchen-sink-dialog-section">
+  <h2>Dialog</h2>
+  <button type="button" data-testid="kitchen-sink-dialog-trigger" (click)="openDialog()">
+    Open dialog
+  </button>
+</section>
+
+<p class="ks-end" data-testid="kitchen-sink-end">— end of kitchen sink page —</p>

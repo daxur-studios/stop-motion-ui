@@ -1,3 +1,14 @@
+// Angular Material structural + theme CSS, required for mat-select's overlay
+// panel, mat-dialog's backdrop, and mat-progress-bar/-spinner — added for the
+// kitchen-sink demo page (replay-app/src/app/kitchen-sink/). Prebuilt CSS
+// import rather than the newer `@use '@angular/material' as mat; @include
+// mat.theme(...)` Sass API — simpler, fewer moving parts to get wrong without
+// being able to compile-check this locally (no network/install access in the
+// environment that wrote this; see PR notes). Swap for the Sass theming API
+// later if the rest of the app adopts custom M3 theming.
+@import '@angular/cdk/overlay-prebuilt.css';
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
 html,
 body {
   height: 100%;

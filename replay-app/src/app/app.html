@@ -16,11 +16,21 @@
     >
       Demo Gallery
     </button>
+    <button
+      type="button"
+      data-testid="nav-kitchen-sink"
+      [class.active]="view() === 'kitchen-sink'"
+      (click)="setView('kitchen-sink')"
+    >
+      Kitchen Sink
+    </button>
   </nav>
 
   @if (view() === 'replay') {
     <app-replay-player />
-  } @else {
+  } @else if (view() === 'demos') {
     <app-demo-gallery />
+  } @else {
+    <app-kitchen-sink />
   }
 </div>

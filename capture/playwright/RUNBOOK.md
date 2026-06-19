@@ -31,6 +31,13 @@
    cd replay-app
    npm install
 
+   cd ../../shared
+   npm install   # required — capture-session.ts's `sharp` import resolves
+                 # from here, not from capture/playwright/node_modules; see
+                 # ADR-006. Skipping this fails with
+                 # "Cannot find package 'sharp' imported from .../shared/capture-session.ts"
+                 # the moment capture-demo.ts runs.
+
    cd ../capture/playwright
    npm install   # postinstall runs `playwright install chromium`
    ```
@@ -73,6 +80,11 @@
    DEMO_URL=http://localhost:4221/ HEADLESS=false OUT_DIR=./out npm run capture:demo
    ```
 
+   The run includes the Kitchen Sink leg (see below), whose async-action step
+   waits out a real ~40s simulated delay — `FAST_ASYNC=true npm run
+   capture:demo` shrinks that to ~4s for faster local iteration on the
+   script itself; omit it to capture the realistic full-length wait.
+
 5. **Verify the manifest**: confirm
    `replay-app/public/test-scenarios/demo-gallery/manifest.json` exists,
    `"backend": "playwright"`, and every `screenshotRef` resolves to a real
@@ -80,8 +92,8 @@
 
 6. **Replay it**: with `replay-app` still serving from step 2, open it in a
    browser, select **"Demo Gallery — real Playwright capture"** from the
-   scenario dropdown, and confirm it plays back the counter / form / wizard
-   sequence captured in step 4.
+   scenario dropdown, and confirm it plays back the counter / form / wizard /
+   kitchen-sink sequence captured in step 4.
 
 ## What the demo capture exercises
 
@@ -90,11 +102,24 @@
 - Contact form: fill name/email, submit, wait for the simulated async
   delay via the app's `data-busy` idle signal (not a fixed sleep)
 - Wizard: three `Next` clicks through all steps
+- Kitchen Sink (`nav-kitchen-sink`): text input + textarea fills (via
+  `.fill()`, no per-keystroke frames), scrolling between sections (not
+  recorded — no scroll action type yet), a mat-select pick, the long async
+  action (real-time dead air on replay by design — see
+  `kitchen-sink.component.ts` and `docs/roadmap.md`'s `asyncWait` entry), and
+  a mat-dialog open/close. This leg is the reference fixture for the
+  proposed `asyncWait`/`type` manifest actions — see code comments in
+  `replay-app/src/app/kitchen-sink/` and `src/capture-demo.ts` for what
+  specifically each step is meant to surface.
 
 ## Known gaps (Phase 1 deliberately excludes)
 
-- No scroll / drag capture (same limitation as chrome-mcp).
+- No scroll / drag capture (same limitation as chrome-mcp) — the Kitchen
+  Sink leg scrolls the real page but the manifest has no record of it; the
+  replay just jumps straight to whatever the next screenshot shows.
 - No retry/backoff if a selector doesn't resolve — script fails fast.
 - Single demo flow only; doesn't yet cover wizard `Back`/`Restart` or form
   validation-error paths.
-- Not yet run for real — see Status above.
+- Not yet run for real end-to-end with the Kitchen Sink leg included — see
+  Status above; the original demo-gallery-only flow had the same gap before
+  this leg was added.
