@@ -11,7 +11,11 @@
       "id": "nav-1",
       "type": "navigate",
       "timestamp": 0,
-      "cursor": { "x": 0, "y": 0, "timestamp": 0 },
+      "cursor": {
+        "x": 0,
+        "y": 0,
+        "timestamp": 0
+      },
       "screenshotRef": "screenshots/0001.png",
       "url": "https://example.test/onboarding/step-1"
     },
@@ -19,7 +23,11 @@
       "id": "click-2",
       "type": "click",
       "timestamp": 1200,
-      "cursor": { "x": 1120, "y": 740, "timestamp": 1200 },
+      "cursor": {
+        "x": 1120,
+        "y": 740,
+        "timestamp": 1200
+      },
       "screenshotRef": "screenshots/0002.png",
       "target": "#next-btn"
     },
@@ -27,7 +35,11 @@
       "id": "circle-3",
       "type": "circle",
       "timestamp": 2100,
-      "cursor": { "x": 640, "y": 360, "timestamp": 2100 },
+      "cursor": {
+        "x": 640,
+        "y": 360,
+        "timestamp": 2100
+      },
       "screenshotRef": "screenshots/0002.png",
       "target": "#email-field",
       "radius": 60,
@@ -37,7 +49,11 @@
       "id": "click-4",
       "type": "click",
       "timestamp": 4500,
-      "cursor": { "x": 1120, "y": 740, "timestamp": 4500 },
+      "cursor": {
+        "x": 1120,
+        "y": 740,
+        "timestamp": 4500
+      },
       "screenshotRef": "screenshots/0003.png",
       "target": "#continue-btn"
     }

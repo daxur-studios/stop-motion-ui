@@ -1,0 +1,142 @@
+{
+  "version": "1.0.0",
+  "capturedAt": "2026-06-18T23:49:15.492Z",
+  "backend": "playwright",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "seed": 42,
+  "events": [
+    {
+      "id": "nav-1",
+      "type": "navigate",
+      "timestamp": 2158,
+      "cursor": {
+        "x": 0,
+        "y": 0,
+        "timestamp": 2158
+      },
+      "screenshotRef": "screenshots/0001.jpg",
+      "url": "http://localhost:17473/",
+      "narrationShort": "Welcome to Daxur Daemon.",
+      "narrationLong": "Welcome to Daxur Daemon, your local-first developer assistant and background coordinator.",
+      "narrationAudioShort": "narration/nav-1-short.wav",
+      "narrationAudioLong": "narration/nav-1-long.wav"
+    },
+    {
+      "id": "click-2",
+      "type": "click",
+      "timestamp": 4236,
+      "cursor": {
+        "x": 125,
+        "y": 356,
+        "timestamp": 4236
+      },
+      "screenshotRef": "screenshots/0002.jpg",
+      "target": "[data-testid=\"sidenav-chat\"]",
+      "narrationShort": "Let's open the chat menu.",
+      "narrationLong": "First, let's open the Chat view where we can speak directly with daemon AI personas.",
+      "narrationAudioShort": "narration/click-2-short.wav",
+      "narrationAudioLong": "narration/click-2-long.wav"
+    },
+    {
+      "id": "click-3",
+      "type": "click",
+      "timestamp": 4386,
+      "cursor": {
+        "x": 366,
+        "y": 96,
+        "timestamp": 4386
+      },
+      "screenshotRef": "screenshots/0003.jpg",
+      "target": "[data-testid=\"chat-new-chat-button\"]",
+      "narrationShort": "Start a new chat.",
+      "narrationLong": "Click the New Chat button to initialize a fresh session with the daemon.",
+      "narrationAudioShort": "narration/click-3-short.wav",
+      "narrationAudioLong": "narration/click-3-long.wav"
+    },
+    {
+      "id": "click-4",
+      "type": "click",
+      "timestamp": 4554,
+      "cursor": {
+        "x": 868,
+        "y": 748,
+        "timestamp": 4554
+      },
+      "screenshotRef": "screenshots/0004.jpg",
+      "target": "[data-testid=\"chat-textarea\"]",
+      "narrationShort": "Enter a prompt.",
+      "narrationLong": "We select the chat composer and input a prompt to request a daemon status check.",
+      "narrationAudioShort": "narration/click-4-short.wav",
+      "narrationAudioLong": "narration/click-4-long.wav"
+    },
+    {
+      "id": "click-5",
+      "type": "click",
+      "timestamp": 4707,
+      "cursor": {
+        "x": 1215,
+        "y": 768,
+        "timestamp": 4707
+      },
+      "screenshotRef": "screenshots/0005.jpg",
+      "target": "[data-testid=\"chat-send-button\"]",
+      "narrationShort": "Send query and watch response stream in.",
+      "narrationLong": "After clicking send, the query is dispatched and the daemon streams its reasoning and result back live.",
+      "narrationAudioShort": "narration/click-5-short.wav",
+      "narrationAudioLong": "narration/click-5-long.wav"
+    },
+    {
+      "id": "click-6",
+      "type": "click",
+      "timestamp": 4861,
+      "cursor": {
+        "x": 125,
+        "y": 174,
+        "timestamp": 4861
+      },
+      "screenshotRef": "screenshots/0006.jpg",
+      "target": "[data-testid=\"sidenav-kanban\"]",
+      "narrationShort": "Open the Kanban view.",
+      "narrationLong": "Next, we navigate to the Kanban board to inspect the queue of scheduled daemon tasks.",
+      "narrationAudioShort": "narration/click-6-short.wav",
+      "narrationAudioLong": "narration/click-6-long.wav"
+    },
+    {
+      "id": "circle-7",
+      "type": "circle",
+      "timestamp": 4992,
+      "cursor": {
+        "x": 765,
+        "y": 1718,
+        "timestamp": 4992
+      },
+      "screenshotRef": "screenshots/0007.jpg",
+      "target": ".kanban-board",
+      "radius": 60,
+      "duration": 1500,
+      "narrationShort": "Observe background tasks.",
+      "narrationLong": "Notice how scheduled tasks, runs, and heartbeats are organized and monitored in columns.",
+      "narrationAudioShort": "narration/circle-7-short.wav",
+      "narrationAudioLong": "narration/circle-7-long.wav"
+    },
+    {
+      "id": "click-8",
+      "type": "click",
+      "timestamp": 7499,
+      "cursor": {
+        "x": 125,
+        "y": 126,
+        "timestamp": 7499
+      },
+      "screenshotRef": "screenshots/0008.jpg",
+      "target": "[data-testid=\"sidenav-dashboard\"]",
+      "narrationShort": "Return to Dashboard.",
+      "narrationLong": "Finally, we return to the main dashboard summary where system states are aggregated.",
+      "narrationAudioShort": "narration/click-8-short.wav",
+      "narrationAudioLong": "narration/click-8-long.wav"
+    }
+  ]
+}
