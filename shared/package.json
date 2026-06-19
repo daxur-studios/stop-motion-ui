@@ -1,0 +1,19 @@
+{
+  "name": "stop-motion-shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Single source of truth for stop-motion-ui's manifest types and the playwright CaptureSession (manifest bookkeeping + sharp/mozjpeg screenshot compression). Consumed in-repo and by Daxur-Daemon's e2e capture script via a file: dependency — see docs/adr/ADR-006-shared-capture-package.md.",
+  "type": "module",
+  "main": "./manifest-types.ts",
+  "types": "./manifest-types.ts",
+  "exports": {
+    "./manifest-types.js": "./manifest-types.ts",
+    "./manifest-types": "./manifest-types.ts",
+    "./capture-session.js": "./capture-session.ts",
+    "./capture-session": "./capture-session.ts",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
+  }
+}
