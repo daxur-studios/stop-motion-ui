@@ -24,9 +24,31 @@ import { promisify } from 'node:util';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const execFileAsync = promisify(execFile);
-const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
+// fileURLToPath (not new URL(...).pathname) so this resolves correctly on
+// Windows — .pathname yields a leading-slash "/D:/..." path that breaks the
+// child-process spawns of the sibling scripts below (MODULE_NOT_FOUND).
+const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Picks the Python interpreter to run render-frames.py with. Prefers `python3`
+ * (Linux/macOS convention) and falls back to `python` (stock Windows installs
+ * expose only `python`, no `python3`), so the pipeline runs cross-platform
+ * without the caller having to know which name their machine uses.
+ */
+async function resolvePython() {
+  for (const cmd of ['python3', 'python']) {
+    try {
+      await execFileAsync(cmd, ['--version']);
+      return cmd;
+    } catch {
+      // Not found / not runnable under this name — try the next candidate.
+    }
+  }
+  throw new Error('No Python interpreter found on PATH (tried python3, python). Install Python 3 with Pillow.');
+}
 
 function parseArgs(argv) {
   const positional = [];
@@ -69,7 +91,8 @@ async function main() {
 
   try {
     // Stage 2: Pillow rasterizes frame-plan.json -> PNG sequence.
-    await run('python3', [path.join(SCRIPT_DIR, 'render-frames.py'), scenarioDir, framesDir]);
+    const python = await resolvePython();
+    await run(python, [path.join(SCRIPT_DIR, 'render-frames.py'), scenarioDir, framesDir]);
 
     // Stage 3a: mix discrete narration clips into one audio track via
     // adelay (per-clip start offset) + amix (combine), normalize=0 so
