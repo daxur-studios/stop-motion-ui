@@ -1,29 +1,19 @@
-import { Component, inject, signal } from '@angular/core';
-import { ReplayPlayerComponent } from './replay-player/replay-player.component';
-import { DemoGalleryComponent } from './demo-gallery/demo-gallery.component';
-import { KitchenSinkComponent } from './kitchen-sink/kitchen-sink.component';
+import { Component, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { BusyService } from './shared/busy.service';
 
-// App root — simple view shell (Replay Player / Demo Gallery / Kitchen
-// Sink), no @angular/router. Adding a router wasn't worth the extra
-// dependency for same-tab view toggling; see ADR-005 for the original
-// two-view reasoning — "kitchen-sink" is the third view ADR-005 said would
-// prompt revisiting that decision if it ever showed up. Still no
-// deep-linking need for a test fixture, so the plain signal toggle stays.
-type View = 'replay' | 'demos' | 'kitchen-sink';
-
+// App root — now routed via @angular/router (see ADR-007; supersedes
+// ADR-005's original "no router" decision, which said a third view would
+// be the trigger to revisit it). Nav is a row of routerLink anchors;
+// <router-outlet> renders whichever of Replay Player / Demo Gallery /
+// Kitchen Sink is active.
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [ReplayPlayerComponent, DemoGalleryComponent, KitchenSinkComponent],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
   protected readonly busyService = inject(BusyService);
-  protected readonly view = signal<View>('replay');
-
-  setView(next: View): void {
-    this.view.set(next);
-  }
 }

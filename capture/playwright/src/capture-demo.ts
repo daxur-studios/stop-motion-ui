@@ -22,7 +22,7 @@
 // ../RUNBOOK.md for the full loop.
 
 import { chromium, type Locator, type Page } from 'playwright';
-import { mkdirSync } from 'fs';
+import { mkdirSync, rmSync, cpSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { CaptureSession } from './capture-session.js';
@@ -31,17 +31,31 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const BASE_DEMO_URL = process.env['DEMO_URL'] ?? 'http://localhost:4221/';
 // FAST_ASYNC=true appends ?fastAsync=1 to the initial navigation, which the
-// Kitchen Sink component reads via window.location.search (no
-// @angular/router in this app, see ADR-005) to shrink its ~40s async action
-// down to ~4s. The query param has to be present on the very first
-// page.goto — the Kitchen Sink view is reached later via an in-page signal
-// toggle, not a real navigation, so there's no later point to attach it.
+// Kitchen Sink component reads via window.location.search to shrink its
+// ~40s async action down to ~4s. The query param only needs to be present
+// on the very first page.goto — app.html's nav links use
+// queryParamsHandling="preserve" (see ADR-007), so it survives the later
+// real router navigation to /kitchen-sink instead of getting dropped.
 const FAST_ASYNC = process.env['FAST_ASYNC'] === 'true';
 const DEMO_URL = FAST_ASYNC
   ? `${BASE_DEMO_URL}${BASE_DEMO_URL.includes('?') ? '&' : '?'}fastAsync=1`
   : BASE_DEMO_URL;
-const OUT_DIR = process.env['OUT_DIR']
+// Final destination — INSIDE replay-app/public/, which `ng serve` watches
+// and serves as static assets.
+const FINAL_OUT_DIR = process.env['OUT_DIR']
   ?? resolve(__dirname, '..', '..', '..', 'replay-app', 'public', 'test-scenarios', 'demo-gallery');
+// Staging dir the capture actually writes into WHILE running — deliberately
+// outside replay-app entirely. CaptureSession.saveScreenshot() does a
+// writeFileSync() after every single step (click, select, etc.), and
+// writing those files straight into replay-app/public/ while `ng serve` is
+// watching it mid-run was a real bug: each screenshot write triggers a dev-
+// server rebuild + live-reload of the very page Playwright is mid-action
+// on, severing open overlays (e.g. an open mat-select panel) and producing
+// real `navigated to ...` events Playwright's auto-wait then blocks on —
+// exactly the timeout + flicker seen in practice. Writing to staging here
+// and copying into place only after the browser closes (see end of main())
+// keeps the dev server untouched for the whole capture run.
+const STAGING_DIR = resolve(__dirname, '..', '.capture-staging', 'demo-gallery');
 const HEADLESS = process.env['HEADLESS'] !== 'false';
 const VIEWPORT = { width: 1280, height: 800 };
 const IDLE_TIMEOUT_MS = 5000;
@@ -96,8 +110,11 @@ async function scrollBy(page: Page, deltaY: number): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  mkdirSync(OUT_DIR, { recursive: true });
-  const session = new CaptureSession({ outDir: OUT_DIR, viewport: VIEWPORT, seed: 42 });
+  // Clean slate each run — stale screenshots from a previous failed attempt
+  // shouldn't linger in staging.
+  rmSync(STAGING_DIR, { recursive: true, force: true });
+  mkdirSync(STAGING_DIR, { recursive: true });
+  const session = new CaptureSession({ outDir: STAGING_DIR, viewport: VIEWPORT, seed: 42 });
 
   const browser = await chromium.launch({ headless: HEADLESS });
   const context = await browser.newContext({ viewport: VIEWPORT });
@@ -290,13 +307,23 @@ async function main(): Promise<void> {
       screenshotRef: await shot(session, page),
     });
 
-    const manifestPath = session.save();
-    console.log(`Wrote ${manifestPath}`);
-    console.log(`Events: ${session.getEvents().length}`);
-    console.log(`Screenshots: ${join(OUT_DIR, 'screenshots')}`);
+    session.save(); // writes STAGING_DIR/manifest.json — finished writing into staging
   } finally {
     await browser.close();
   }
+
+  // Only now — browser closed, no more mid-run writes possible — copy the
+  // finished manifest + screenshots from staging into replay-app/public/.
+  // This is the one and only write into the dev-server-watched folder for
+  // the whole run, and it happens after Playwright is done with the page,
+  // so there's nothing left for a triggered reload to disrupt.
+  rmSync(FINAL_OUT_DIR, { recursive: true, force: true });
+  mkdirSync(dirname(FINAL_OUT_DIR), { recursive: true });
+  cpSync(STAGING_DIR, FINAL_OUT_DIR, { recursive: true });
+
+  console.log(`Wrote ${join(FINAL_OUT_DIR, 'manifest.json')}`);
+  console.log(`Events: ${session.getEvents().length}`);
+  console.log(`Screenshots: ${join(FINAL_OUT_DIR, 'screenshots')}`);
 }
 
 main().catch((err) => {

@@ -63,8 +63,9 @@ const FILLER_PARAGRAPHS = [
  * shortened via a query param for fast local iteration without editing the
  * constant — e.g. `?fastAsync=1` or an explicit `?asyncDurationMs=2000`.
  * Read directly from `window.location.search` rather than `ActivatedRoute`
- * because this app has no @angular/router (see ADR-005) — there's no
- * Router service to inject.
+ * to keep this a plain function with no DI — works the same whether or not
+ * a Router is present (the app now has one; see ADR-007), since query
+ * params are preserved on the '' -> 'replay' redirect either way.
  */
 function resolveAsyncDurationMs(): number {
   if (typeof window === 'undefined') return DEFAULT_ASYNC_DURATION_MS;

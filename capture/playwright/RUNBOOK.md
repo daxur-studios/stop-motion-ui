@@ -97,7 +97,8 @@
 
 ## What the demo capture exercises
 
-- `nav-demos` tab switch (Replay ↔ Demos toggle, no router)
+- `nav-demos` tab switch (real `/replay` ↔ `/demos` router navigation as of
+  ADR-007 — previously an in-page signal toggle)
 - Counter: two increments + a circle gesture on the value
 - Contact form: fill name/email, submit, wait for the simulated async
   delay via the app's `data-busy` idle signal (not a fixed sleep)
@@ -111,6 +112,27 @@
   proposed `asyncWait`/`type` manifest actions — see code comments in
   `replay-app/src/app/kitchen-sink/` and `src/capture-demo.ts` for what
   specifically each step is meant to surface.
+
+## Fixed: dev-server reload mid-capture
+
+Real bug, found while running this for the first time end-to-end against a
+live `ng serve`: `capture-demo.ts` used to write each screenshot straight
+into `replay-app/public/test-scenarios/demo-gallery/screenshots/` *during*
+the run (`CaptureSession.saveScreenshot()` does a `writeFileSync()` after
+every click/select/etc.). That path is inside `replay-app/public/`, which
+`ng serve` watches — so every screenshot write triggered a dev-server
+rebuild + live-reload of the very page Playwright was mid-action on. Symptoms
+matched exactly: rapid flicker early in the run (frequent steps → frequent
+writes → frequent reloads), and a hard hang/timeout later (a reload landing
+mid-click tore down an open `mat-select` panel, and Playwright's own log
+showed a real `navigated to ".../kitchen-sink"` event firing while it waited
+on a locator — proof it was a full page reload, not a SPA route change).
+
+Fixed by writing into `capture/playwright/.capture-staging/` (git-ignored,
+outside `replay-app/` entirely) for the whole run, then copying the finished
+`manifest.json` + `screenshots/` into `replay-app/public/...` only after
+`browser.close()`. The dev server now sees zero file changes until the
+capture is completely done.
 
 ## Known gaps (Phase 1 deliberately excludes)
 

@@ -1,8 +1,11 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZonelessChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { routes } from './app.routes';
 
-// No router — this app is a single-page wrapper around the replay player,
-// there's nothing else to navigate to.
+// @angular/router added (see ADR-007, supersedes ADR-005's original
+// "no router" call) now that there are three real views and a need for
+// actual URL navigation rather than an in-memory signal toggle.
 //
 // provideAnimationsAsync() is required by Angular Material (mat-select,
 // mat-dialog, mat-progress-bar/-spinner all use it) — added for the
@@ -12,6 +15,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
+    provideRouter(routes),
     provideAnimationsAsync(),
   ],
 };

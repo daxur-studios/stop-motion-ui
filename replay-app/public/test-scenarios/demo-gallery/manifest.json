@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "capturedAt": "2026-06-18T20:06:31.779Z",
+  "capturedAt": "2026-06-19T23:35:21.158Z",
   "backend": "playwright",
   "viewport": {
     "width": 1280,
@@ -11,11 +11,11 @@
     {
       "id": "nav-1",
       "type": "navigate",
-      "timestamp": 1522,
+      "timestamp": 1426,
       "cursor": {
         "x": 0,
         "y": 0,
-        "timestamp": 1522
+        "timestamp": 1426
       },
       "screenshotRef": "screenshots/0001.jpg",
       "url": "http://localhost:4221/"
@@ -23,11 +23,11 @@
     {
       "id": "click-2",
       "type": "click",
-      "timestamp": 1753,
+      "timestamp": 1582,
       "cursor": {
-        "x": 699,
-        "y": 29,
-        "timestamp": 1753
+        "x": 637,
+        "y": 28,
+        "timestamp": 1582
       },
       "screenshotRef": "screenshots/0002.jpg",
       "target": "[data-testid=\"nav-demos\"]"
@@ -35,11 +35,11 @@
     {
       "id": "click-3",
       "type": "click",
-      "timestamp": 1962,
+      "timestamp": 1690,
       "cursor": {
-        "x": 411,
-        "y": 156,
-        "timestamp": 1962
+        "x": 410,
+        "y": 154,
+        "timestamp": 1690
       },
       "screenshotRef": "screenshots/0003.jpg",
       "target": "[data-testid=\"demo-counter-increment\"]"
@@ -47,11 +47,11 @@
     {
       "id": "click-4",
       "type": "click",
-      "timestamp": 2158,
+      "timestamp": 1799,
       "cursor": {
-        "x": 411,
-        "y": 156,
-        "timestamp": 2158
+        "x": 410,
+        "y": 154,
+        "timestamp": 1799
       },
       "screenshotRef": "screenshots/0004.jpg",
       "target": "[data-testid=\"demo-counter-increment\"]"
@@ -59,11 +59,11 @@
     {
       "id": "circle-5",
       "type": "circle",
-      "timestamp": 2313,
+      "timestamp": 1884,
       "cursor": {
         "x": 640,
-        "y": 110,
-        "timestamp": 2313
+        "y": 109,
+        "timestamp": 1884
       },
       "screenshotRef": "screenshots/0005.jpg",
       "target": "[data-testid=\"demo-counter-value\"]",
@@ -73,11 +73,11 @@
     {
       "id": "click-6",
       "type": "click",
-      "timestamp": 3017,
+      "timestamp": 2399,
       "cursor": {
         "x": 374,
-        "y": 386,
-        "timestamp": 3017
+        "y": 382,
+        "timestamp": 2399
       },
       "screenshotRef": "screenshots/0006.jpg",
       "target": "[data-testid=\"demo-form-submit\"]"
@@ -85,11 +85,11 @@
     {
       "id": "click-7",
       "type": "click",
-      "timestamp": 3166,
+      "timestamp": 6963,
       "cursor": {
-        "x": 434,
-        "y": 471,
-        "timestamp": 3166
+        "x": 433,
+        "y": 553,
+        "timestamp": 6963
       },
       "screenshotRef": "screenshots/0007.jpg",
       "target": "[data-testid=\"demo-wizard-next\"]"
@@ -97,11 +97,11 @@
     {
       "id": "click-8",
       "type": "click",
-      "timestamp": 3303,
+      "timestamp": 7096,
       "cursor": {
-        "x": 434,
-        "y": 471,
-        "timestamp": 3303
+        "x": 433,
+        "y": 553,
+        "timestamp": 7096
       },
       "screenshotRef": "screenshots/0008.jpg",
       "target": "[data-testid=\"demo-wizard-next\"]"
@@ -109,14 +109,138 @@
     {
       "id": "click-9",
       "type": "click",
-      "timestamp": 3438,
+      "timestamp": 7222,
       "cursor": {
-        "x": 438,
-        "y": 471,
-        "timestamp": 3438
+        "x": 437,
+        "y": 553,
+        "timestamp": 7222
       },
       "screenshotRef": "screenshots/0009.jpg",
       "target": "[data-testid=\"demo-wizard-next\"]"
+    },
+    {
+      "id": "click-10",
+      "type": "click",
+      "timestamp": 7478,
+      "cursor": {
+        "x": 758,
+        "y": 28,
+        "timestamp": 7478
+      },
+      "screenshotRef": "screenshots/0010.jpg",
+      "target": "[data-testid=\"nav-kitchen-sink\"]"
+    },
+    {
+      "id": "click-11",
+      "type": "click",
+      "timestamp": 7626,
+      "cursor": {
+        "x": 632,
+        "y": 490,
+        "timestamp": 7626
+      },
+      "screenshotRef": "screenshots/0011.jpg",
+      "target": "[data-testid=\"kitchen-sink-text-input\"]"
+    },
+    {
+      "id": "click-12",
+      "type": "click",
+      "timestamp": 11175,
+      "cursor": {
+        "x": 632,
+        "y": 692,
+        "timestamp": 11175
+      },
+      "screenshotRef": "screenshots/0012.jpg",
+      "target": "[data-testid=\"kitchen-sink-textarea\"]"
+    },
+    {
+      "id": "click-13",
+      "type": "click",
+      "timestamp": 11584,
+      "cursor": {
+        "x": 437,
+        "y": 395,
+        "timestamp": 11584
+      },
+      "screenshotRef": "screenshots/0013.jpg",
+      "target": "[data-testid=\"kitchen-sink-select\"]"
+    },
+    {
+      "id": "click-14",
+      "type": "click",
+      "timestamp": 11737,
+      "cursor": {
+        "x": 437,
+        "y": 495,
+        "timestamp": 11737
+      },
+      "screenshotRef": "screenshots/0014.jpg",
+      "target": "[data-testid=\"kitchen-sink-select-option-beta\"]"
+    },
+    {
+      "id": "click-15",
+      "type": "click",
+      "timestamp": 12171,
+      "cursor": {
+        "x": 387,
+        "y": 378,
+        "timestamp": 12171
+      },
+      "screenshotRef": "screenshots/0015.jpg",
+      "target": "[data-testid=\"kitchen-sink-async-trigger\"]"
+    },
+    {
+      "id": "circle-16",
+      "type": "circle",
+      "timestamp": 52148,
+      "cursor": {
+        "x": 632,
+        "y": 370,
+        "timestamp": 52148
+      },
+      "screenshotRef": "screenshots/0016.jpg",
+      "target": "[data-testid=\"kitchen-sink-async-result\"]",
+      "radius": 30,
+      "duration": 1000
+    },
+    {
+      "id": "click-17",
+      "type": "click",
+      "timestamp": 52487,
+      "cursor": {
+        "x": 381,
+        "y": 718,
+        "timestamp": 52487
+      },
+      "screenshotRef": "screenshots/0017.jpg",
+      "target": "[data-testid=\"kitchen-sink-dialog-trigger\"]"
+    },
+    {
+      "id": "click-18",
+      "type": "click",
+      "timestamp": 52727,
+      "cursor": {
+        "x": 779,
+        "y": 488,
+        "timestamp": 52727
+      },
+      "screenshotRef": "screenshots/0018.jpg",
+      "target": "[data-testid=\"kitchen-sink-dialog-close\"]"
+    },
+    {
+      "id": "circle-19",
+      "type": "circle",
+      "timestamp": 53011,
+      "cursor": {
+        "x": 632,
+        "y": 790,
+        "timestamp": 53011
+      },
+      "screenshotRef": "screenshots/0019.jpg",
+      "target": "[data-testid=\"kitchen-sink-end\"]",
+      "radius": 24,
+      "duration": 900
     }
   ]
 }

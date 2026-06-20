@@ -33,6 +33,8 @@ against.
   `@angular/router`. Two views, no deep-linking need, no nested routes —
   adding the router dependency for a same-tab toggle isn't worth it. If a
   third view or URL-addressable demos show up later, revisit.
+  **Superseded by ADR-007** — a third view (Kitchen Sink) did show up, and
+  `@angular/router` was added.
 - **`capture-demo.ts` writes straight into
   `replay-app/public/test-scenarios/demo-gallery/`** instead of a local
   output folder that then gets copied. One fewer manual step between
@@ -44,7 +46,8 @@ against.
   manifest schema changes — same tradeoff ADR-001 already accepted.
 - Demo Gallery has no URL of its own; can't deep-link to "the demos view."
   Acceptable for a test fixture, would need revisiting if it became
-  user-facing.
+  user-facing. (No longer true as of ADR-007 — each view now has a real
+  route.)
 - Playwright backend was written and syntax-checked but not run against a
   live browser in the environment that authored it (no outbound network
   access there) — see `capture/playwright/RUNBOOK.md` Status section for

@@ -1,36 +1,30 @@
 <div class="app-shell" [attr.data-busy]="busyService.busy() ? 'true' : 'false'">
   <nav class="top-nav" data-testid="app-nav">
-    <button
-      type="button"
+    <a
+      routerLink="/replay"
+      routerLinkActive="active"
+      queryParamsHandling="preserve"
       data-testid="nav-replay"
-      [class.active]="view() === 'replay'"
-      (click)="setView('replay')"
     >
       Replay Player
-    </button>
-    <button
-      type="button"
+    </a>
+    <a
+      routerLink="/demos"
+      routerLinkActive="active"
+      queryParamsHandling="preserve"
       data-testid="nav-demos"
-      [class.active]="view() === 'demos'"
-      (click)="setView('demos')"
     >
       Demo Gallery
-    </button>
-    <button
-      type="button"
+    </a>
+    <a
+      routerLink="/kitchen-sink"
+      routerLinkActive="active"
+      queryParamsHandling="preserve"
       data-testid="nav-kitchen-sink"
-      [class.active]="view() === 'kitchen-sink'"
-      (click)="setView('kitchen-sink')"
     >
       Kitchen Sink
-    </button>
+    </a>
   </nav>
 
-  @if (view() === 'replay') {
-    <app-replay-player />
-  } @else if (view() === 'demos') {
-    <app-demo-gallery />
-  } @else {
-    <app-kitchen-sink />
-  }
+  <router-outlet />
 </div>
