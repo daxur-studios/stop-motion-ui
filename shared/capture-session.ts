@@ -28,6 +28,7 @@ import type {
   NavigateAction,
   CircleAction,
   ScrollAction,
+  AsyncWaitAction,
   CursorPoint,
 } from './manifest-types.js';
 
@@ -83,6 +84,19 @@ export interface AddScrollArgs {
   frames?: string[];
   /** Optional explicit replay duration (ms) for the `frames` animation — see ScrollAction's doc comment. */
   frameDurationMs?: number;
+  id?: string;
+  narrationShort?: string;
+  narrationLong?: string;
+}
+
+export interface AddAsyncWaitArgs {
+  target: string;
+  /** Must have at least 1 element; last is treated as the lingering/full-quality frame — see AsyncWaitAction's doc comment. */
+  frames: string[];
+  realDurationMs: number;
+  frameDurationMs: number;
+  cursor: XY;
+  screenshotRef: string;
   id?: string;
   narrationShort?: string;
   narrationLong?: string;
@@ -208,6 +222,27 @@ export class CaptureSession {
       ...(args.frames && args.frames.length > 1 && args.frameDurationMs
         ? { frameDurationMs: args.frameDurationMs }
         : {}),
+      ...(args.narrationShort ? { narrationShort: args.narrationShort } : {}),
+      ...(args.narrationLong ? { narrationLong: args.narrationLong } : {}),
+    };
+    this.manifest.events.push(event);
+    return event;
+  }
+
+  addAsyncWait(args: AddAsyncWaitArgs): AsyncWaitAction {
+    if (args.frames.length === 0) {
+      throw new Error('addAsyncWait: frames must have at least one element (the lingering/full-quality frame)');
+    }
+    const event: AsyncWaitAction = {
+      id: args.id ?? `asyncwait-${this.seq}`,
+      type: 'asyncWait',
+      timestamp: this.elapsed(),
+      cursor: this.cursorAt(args.cursor.x, args.cursor.y),
+      screenshotRef: args.screenshotRef,
+      target: args.target,
+      frames: args.frames,
+      realDurationMs: args.realDurationMs,
+      frameDurationMs: args.frameDurationMs,
       ...(args.narrationShort ? { narrationShort: args.narrationShort } : {}),
       ...(args.narrationLong ? { narrationLong: args.narrationLong } : {}),
     };

@@ -240,7 +240,19 @@
 
       // Glide from wherever we ended up to this event's cursor point, while
       // showing whatever screenshot was current *before* this event landed.
-      const moveDur = ev.timestamp - prevManifestEnd;
+      // Special case: an 'asyncWait' event's manifest timestamp is recorded
+      // *after* the real wait it represents already happened in capture
+      // (CaptureSession.addAsyncWait() is called post-wait, same as every
+      // other add*() method — see shared/capture-session.ts) — so
+      // `ev.timestamp - prevManifestEnd` here would be the wait's entire
+      // real duration (tens of seconds), and gliding the cursor across that
+      // gap is exactly the uncompressed "dead air" docs/roadmap.md's
+      // asyncWait entry exists to fix. The cursor doesn't actually travel
+      // anywhere during a real wait (it's already parked on whatever was
+      // just clicked, same coordinates as `ev.cursor`), so there's nothing
+      // to glide — the compressed 'asyncWait' phase below is what shows the
+      // wait, not this move phase. Force it to 0 rather than the raw gap.
+      const moveDur = ev.type === 'asyncWait' ? 0 : ev.timestamp - prevManifestEnd;
       // For a 'circle' event, the cursor doesn't actually rest at the
       // literal center once the gesture starts — sampleAt()'s 'circle'
       // branch always renders it offset by the full radius (the orbit's
@@ -269,6 +281,7 @@
       }
 
       let circlePhaseRef = null;
+      let asyncWaitPhaseRef = null;
       if (ev.type === 'circle') {
         const t1 = prev.t + ev.duration;
         circlePhaseRef = {
@@ -289,6 +302,31 @@
         const exitPoint = circleOrbitPoint({ x: ev.cursor.x, y: ev.cursor.y }, ev.radius, 1);
         prev = { x: exitPoint.x, y: exitPoint.y, t: t1, screenshot: ev.screenshotRef };
         prevManifestEnd = ev.timestamp + ev.duration;
+      } else if (ev.type === 'asyncWait') {
+        // Compressed real-wait phase: cursor stays parked at ev.cursor (no
+        // motion — see the moveDur special case above) while the
+        // background cycles through ev.frames, a sequence of full-screen
+        // screenshots (not region-cropped composites — see ADR-010, which
+        // removed an earlier version of this that layered small crops over
+        // a held base frame; full-screen frames are simpler and make the
+        // base/crop layout-shift drift bug that earlier version risked
+        // structurally impossible). Conceptually similar to how a 'scroll'
+        // phase (in replay-app's Angular player only, not this file) cycles
+        // full-screen background frames.
+        const t1 = prev.t + ev.frameDurationMs;
+        asyncWaitPhaseRef = {
+          kind: 'asyncWait',
+          t0: prev.t,
+          t1: t1,
+          x: ev.cursor.x,
+          y: ev.cursor.y,
+          screenshot: ev.screenshotRef,
+          frames: ev.frames,
+        };
+        phases.push(asyncWaitPhaseRef);
+        visualDuration += ev.frameDurationMs;
+        prev = { x: ev.cursor.x, y: ev.cursor.y, t: t1, screenshot: ev.screenshotRef };
+        prevManifestEnd = ev.timestamp;
       } else {
         prev = { x: ev.cursor.x, y: ev.cursor.y, t: prev.t, screenshot: ev.screenshotRef };
         prevManifestEnd = ev.timestamp;
@@ -301,9 +339,9 @@
       const extra = Math.max(0, narrationMs - visualDuration);
 
       // Trigger narration at whichever phase starts this step (move, else
-      // circle, else — if the step has no visual duration at all — the
-      // extra hold phase below).
-      const narrationOwner = movePhaseRef || circlePhaseRef;
+      // circle or asyncWait, else — if the step has no visual duration at
+      // all — the extra hold phase below).
+      const narrationOwner = movePhaseRef || circlePhaseRef || asyncWaitPhaseRef;
       if (narration && narration.el && narrationOwner) {
         narrationOwner.narration = narration.el;
       }
@@ -380,6 +418,23 @@
         screenshot: phase.screenshot,
         ripple: null,
         orbit: { center: phase.center, radius: phase.radius, frac },
+      };
+    }
+
+    if (phase.kind === 'asyncWait') {
+      // Cursor stays parked (no orbit, no glide) — the full-screen
+      // `screenshot` itself cycles through phase.frames as frac advances
+      // (see ADR-010; this used to composite a small region crop over a
+      // held base frame instead of swapping the whole screenshot).
+      const frameIndex = phase.frames.length > 0
+        ? Math.min(phase.frames.length - 1, Math.floor(frac * phase.frames.length))
+        : -1;
+      return {
+        x: phase.x,
+        y: phase.y,
+        screenshot: frameIndex >= 0 ? phase.frames[frameIndex] : phase.screenshot,
+        ripple: null,
+        orbit: null,
       };
     }
 
@@ -474,7 +529,17 @@
     const built = buildTimeline(manifest, getNarration);
     timeline = { ...built, baseDir };
 
-    const refs = Array.from(new Set(manifest.events.map((e) => e.screenshotRef)));
+    // asyncWait events carry extra full-screen frames (e.frames) beyond
+    // their own screenshotRef — all need preloading the same way, or
+    // sampleAt()'s screenshot lookups would have nothing in `images` to
+    // find by the time render() runs.
+    const refSet = new Set(manifest.events.map((e) => e.screenshotRef));
+    for (const e of manifest.events) {
+      if (e.type === 'asyncWait' && Array.isArray(e.frames)) {
+        for (const f of e.frames) refSet.add(f);
+      }
+    }
+    const refs = Array.from(refSet);
     statusEl.textContent = 'Loading ' + refs.length + ' screenshot(s)…';
 
     images = new Map();

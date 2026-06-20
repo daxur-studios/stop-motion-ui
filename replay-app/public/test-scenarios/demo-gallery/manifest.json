@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "capturedAt": "2026-06-20T12:14:24.737Z",
+  "capturedAt": "2026-06-20T15:20:03.946Z",
   "backend": "playwright",
   "viewport": {
     "width": 1280,
@@ -11,25 +11,25 @@
     {
       "id": "nav-1",
       "type": "navigate",
-      "timestamp": 1291,
+      "timestamp": 1707,
       "cursor": {
         "x": 0,
         "y": 0,
-        "timestamp": 1291
+        "timestamp": 1707
       },
       "screenshotRef": "screenshots/0001.jpg",
-      "url": "http://localhost:4221/",
+      "url": "http://localhost:4221/?fastAsync=1",
       "narrationShort": "Starting on the Replay Player view.",
       "narrationLong": "This is the Replay Player view, where a previously captured manifest plays back."
     },
     {
       "id": "click-2",
       "type": "click",
-      "timestamp": 1467,
+      "timestamp": 1881,
       "cursor": {
-        "x": 643,
-        "y": 30,
-        "timestamp": 1467
+        "x": 635,
+        "y": 29,
+        "timestamp": 1881
       },
       "screenshotRef": "screenshots/0002.jpg",
       "target": "[data-testid=\"nav-demos\"]",
@@ -39,11 +39,11 @@
     {
       "id": "click-3",
       "type": "click",
-      "timestamp": 1586,
+      "timestamp": 2002,
       "cursor": {
-        "x": 411,
-        "y": 158,
-        "timestamp": 1586
+        "x": 410,
+        "y": 156,
+        "timestamp": 2002
       },
       "screenshotRef": "screenshots/0003.jpg",
       "target": "[data-testid=\"demo-counter-increment\"]",
@@ -53,11 +53,11 @@
     {
       "id": "click-4",
       "type": "click",
-      "timestamp": 1700,
+      "timestamp": 2133,
       "cursor": {
-        "x": 411,
-        "y": 158,
-        "timestamp": 1700
+        "x": 410,
+        "y": 156,
+        "timestamp": 2133
       },
       "screenshotRef": "screenshots/0004.jpg",
       "target": "[data-testid=\"demo-counter-increment\"]",
@@ -67,11 +67,11 @@
     {
       "id": "circle-5",
       "type": "circle",
-      "timestamp": 1780,
+      "timestamp": 2243,
       "cursor": {
         "x": 640,
-        "y": 112,
-        "timestamp": 1780
+        "y": 111,
+        "timestamp": 2243
       },
       "screenshotRef": "screenshots/0005.jpg",
       "target": "[data-testid=\"demo-counter-value\"]",
@@ -83,11 +83,11 @@
     {
       "id": "click-6",
       "type": "click",
-      "timestamp": 1919,
+      "timestamp": 2903,
       "cursor": {
         "x": 374,
-        "y": 388,
-        "timestamp": 1919
+        "y": 384,
+        "timestamp": 2903
       },
       "screenshotRef": "screenshots/0006.jpg",
       "target": "[data-testid=\"demo-form-submit\"]",
@@ -97,11 +97,11 @@
     {
       "id": "click-7",
       "type": "click",
-      "timestamp": 2461,
+      "timestamp": 3024,
       "cursor": {
-        "x": 434,
-        "y": 559,
-        "timestamp": 2461
+        "x": 433,
+        "y": 469,
+        "timestamp": 3024
       },
       "screenshotRef": "screenshots/0007.jpg",
       "target": "[data-testid=\"demo-wizard-next\"]",
@@ -111,11 +111,11 @@
     {
       "id": "click-8",
       "type": "click",
-      "timestamp": 2573,
+      "timestamp": 3134,
       "cursor": {
-        "x": 434,
-        "y": 473,
-        "timestamp": 2573
+        "x": 433,
+        "y": 469,
+        "timestamp": 3134
       },
       "screenshotRef": "screenshots/0008.jpg",
       "target": "[data-testid=\"demo-wizard-next\"]",
@@ -125,11 +125,11 @@
     {
       "id": "click-9",
       "type": "click",
-      "timestamp": 2673,
+      "timestamp": 3243,
       "cursor": {
-        "x": 438,
-        "y": 473,
-        "timestamp": 2673
+        "x": 437,
+        "y": 469,
+        "timestamp": 3243
       },
       "screenshotRef": "screenshots/0009.jpg",
       "target": "[data-testid=\"demo-wizard-next\"]",
@@ -139,11 +139,11 @@
     {
       "id": "click-10",
       "type": "click",
-      "timestamp": 2847,
+      "timestamp": 3471,
       "cursor": {
-        "x": 755,
-        "y": 30,
-        "timestamp": 2847
+        "x": 754,
+        "y": 29,
+        "timestamp": 3471
       },
       "screenshotRef": "screenshots/0010.jpg",
       "target": "[data-testid=\"nav-kitchen-sink\"]",
@@ -153,11 +153,11 @@
     {
       "id": "click-11",
       "type": "click",
-      "timestamp": 3009,
+      "timestamp": 3628,
       "cursor": {
-        "x": 640,
-        "y": 494,
-        "timestamp": 3009
+        "x": 632,
+        "y": 492,
+        "timestamp": 3628
       },
       "screenshotRef": "screenshots/0011.jpg",
       "target": "[data-testid=\"kitchen-sink-text-input\"]",
@@ -167,11 +167,11 @@
     {
       "id": "click-12",
       "type": "click",
-      "timestamp": 3177,
+      "timestamp": 3790,
       "cursor": {
-        "x": 640,
-        "y": 697,
-        "timestamp": 3177
+        "x": 632,
+        "y": 694,
+        "timestamp": 3790
       },
       "screenshotRef": "screenshots/0012.jpg",
       "target": "[data-testid=\"kitchen-sink-textarea\"]",
@@ -181,11 +181,11 @@
     {
       "id": "scroll-18",
       "type": "scroll",
-      "timestamp": 4146,
+      "timestamp": 4796,
       "cursor": {
-        "x": 445,
-        "y": 401,
-        "timestamp": 4146
+        "x": 437,
+        "y": 397,
+        "timestamp": 4796
       },
       "screenshotRef": "screenshots/0018.jpg",
       "scrollY": 700,
@@ -203,11 +203,11 @@
     {
       "id": "click-19",
       "type": "click",
-      "timestamp": 4465,
+      "timestamp": 5081,
       "cursor": {
-        "x": 445,
-        "y": 401,
-        "timestamp": 4465
+        "x": 437,
+        "y": 397,
+        "timestamp": 5081
       },
       "screenshotRef": "screenshots/0019.jpg",
       "target": "[data-testid=\"kitchen-sink-select\"]",
@@ -217,11 +217,11 @@
     {
       "id": "click-20",
       "type": "click",
-      "timestamp": 4728,
+      "timestamp": 5323,
       "cursor": {
-        "x": 445,
-        "y": 501,
-        "timestamp": 4728
+        "x": 437,
+        "y": 497,
+        "timestamp": 5323
       },
       "screenshotRef": "screenshots/0020.jpg",
       "target": "[data-testid=\"kitchen-sink-select-option-beta\"]",
@@ -231,14 +231,14 @@
     {
       "id": "scroll-26",
       "type": "scroll",
-      "timestamp": 5736,
+      "timestamp": 6229,
       "cursor": {
-        "x": 396,
-        "y": 376,
-        "timestamp": 5736
+        "x": 387,
+        "y": 378,
+        "timestamp": 6229
       },
       "screenshotRef": "screenshots/0026.jpg",
-      "scrollY": 1194,
+      "scrollY": 1186.6666259765625,
       "frames": [
         "screenshots/0021.jpg",
         "screenshots/0022.jpg",
@@ -254,11 +254,11 @@
     {
       "id": "click-27",
       "type": "click",
-      "timestamp": 5897,
+      "timestamp": 6447,
       "cursor": {
-        "x": 396,
-        "y": 376,
-        "timestamp": 5897
+        "x": 387,
+        "y": 378,
+        "timestamp": 6447
       },
       "screenshotRef": "screenshots/0027.jpg",
       "target": "[data-testid=\"kitchen-sink-async-trigger\"]",
@@ -266,15 +266,45 @@
       "narrationLong": "This simulates a real network request that can take many seconds to finish, while a progress bar and spinner show that it is working."
     },
     {
-      "id": "circle-28",
-      "type": "circle",
-      "timestamp": 45972,
+      "id": "asyncwait-33",
+      "type": "asyncWait",
+      "timestamp": 10359,
       "cursor": {
-        "x": 640,
-        "y": 413,
-        "timestamp": 45972
+        "x": 387,
+        "y": 378,
+        "timestamp": 10359
       },
-      "screenshotRef": "screenshots/0028.jpg",
+      "screenshotRef": "screenshots/0027.jpg",
+      "target": "[data-testid=\"kitchen-sink-async-active\"]",
+      "regionRect": {
+        "x": 331,
+        "y": 405,
+        "width": 603,
+        "height": 102
+      },
+      "frames": [
+        "screenshots/0028.jpg",
+        "screenshots/0029.jpg",
+        "screenshots/0030.jpg",
+        "screenshots/0031.jpg",
+        "screenshots/0032.jpg",
+        "screenshots/0033.jpg"
+      ],
+      "realDurationMs": 3850,
+      "frameDurationMs": 2500,
+      "narrationShort": "Waiting for the action to finish.",
+      "narrationLong": "The action runs in the background while a progress bar and spinner show it working, compressed here from its real duration."
+    },
+    {
+      "id": "circle-34",
+      "type": "circle",
+      "timestamp": 10484,
+      "cursor": {
+        "x": 632,
+        "y": 415,
+        "timestamp": 10484
+      },
+      "screenshotRef": "screenshots/0034.jpg",
       "target": "[data-testid=\"kitchen-sink-async-result\"]",
       "radius": 30,
       "duration": 1000,
@@ -282,71 +312,71 @@
       "narrationLong": "The long-running action has finished and the result is now shown."
     },
     {
-      "id": "scroll-29",
+      "id": "scroll-35",
       "type": "scroll",
-      "timestamp": 46273,
+      "timestamp": 10765,
       "cursor": {
-        "x": 389,
-        "y": 717,
-        "timestamp": 46273
+        "x": 381,
+        "y": 718,
+        "timestamp": 10765
       },
-      "screenshotRef": "screenshots/0029.jpg",
-      "scrollY": 1239,
+      "screenshotRef": "screenshots/0035.jpg",
+      "scrollY": 1232,
       "narrationShort": "Scrolling down to the dialog trigger.",
       "narrationLong": "Scrolling further down the page brings the dialog trigger button into view."
     },
     {
-      "id": "click-30",
+      "id": "click-36",
       "type": "click",
-      "timestamp": 46579,
+      "timestamp": 11064,
       "cursor": {
-        "x": 389,
-        "y": 717,
-        "timestamp": 46579
+        "x": 381,
+        "y": 718,
+        "timestamp": 11064
       },
-      "screenshotRef": "screenshots/0030.jpg",
+      "screenshotRef": "screenshots/0036.jpg",
       "target": "[data-testid=\"kitchen-sink-dialog-trigger\"]",
       "narrationShort": "Opening the dialog.",
       "narrationLong": "Clicking the dialog trigger opens a modal dialog on top of the page."
     },
     {
-      "id": "click-31",
+      "id": "click-37",
       "type": "click",
-      "timestamp": 46853,
+      "timestamp": 11304,
       "cursor": {
-        "x": 787,
+        "x": 779,
         "y": 488,
-        "timestamp": 46853
+        "timestamp": 11304
       },
-      "screenshotRef": "screenshots/0031.jpg",
+      "screenshotRef": "screenshots/0037.jpg",
       "target": "[data-testid=\"kitchen-sink-dialog-close\"]",
       "narrationShort": "Closing the dialog.",
       "narrationLong": "Clicking Close dismisses the dialog and returns to the page underneath."
     },
     {
-      "id": "scroll-32",
+      "id": "scroll-38",
       "type": "scroll",
-      "timestamp": 47147,
+      "timestamp": 11586,
       "cursor": {
-        "x": 640,
+        "x": 632,
         "y": 790,
-        "timestamp": 47147
+        "timestamp": 11586
       },
-      "screenshotRef": "screenshots/0032.jpg",
-      "scrollY": 1239,
+      "screenshotRef": "screenshots/0038.jpg",
+      "scrollY": 1232,
       "narrationShort": "Scrolling to the bottom of the page.",
       "narrationLong": "Scrolling all the way down brings the bottom marker into view."
     },
     {
-      "id": "circle-33",
+      "id": "circle-39",
       "type": "circle",
-      "timestamp": 47285,
+      "timestamp": 11714,
       "cursor": {
-        "x": 640,
+        "x": 632,
         "y": 790,
-        "timestamp": 47285
+        "timestamp": 11714
       },
-      "screenshotRef": "screenshots/0033.jpg",
+      "screenshotRef": "screenshots/0039.jpg",
       "target": "[data-testid=\"kitchen-sink-end\"]",
       "radius": 24,
       "duration": 900,

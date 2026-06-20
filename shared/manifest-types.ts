@@ -13,7 +13,7 @@ export interface CursorPoint {
   timestamp: number; // ms since capture start
 }
 
-export type ActionType = 'click' | 'navigate' | 'circle' | 'scroll';
+export type ActionType = 'click' | 'navigate' | 'circle' | 'scroll' | 'asyncWait';
 
 interface BaseEvent {
   id: string;
@@ -116,7 +116,63 @@ export interface CircleAction extends BaseEvent {
   duration: number;
 }
 
-export type ManifestEvent = ClickAction | NavigateAction | CircleAction | ScrollAction;
+/**
+ * Records a long real-world wait (e.g. a ~40s network/processing action)
+ * during which the page is mostly static except for some small moving
+ * element (loading spinner/progress bar) — see "asyncWait" in
+ * docs/roadmap.md.
+ *
+ * As of ADR-010, this is **plain full-screen frame sampling**, the same
+ * shape as ScrollAction.frames — not region-cropped/composited. An earlier
+ * version of this type (see ADR-010's "what changed" section, and the
+ * now-historical write-up in docs/open-questions.md's "Element-region
+ * screenshot compositing" entry) captured one full-screen backdrop plus
+ * small cropped `frames` layered on top at a cached `regionRect` position,
+ * to save bytes for the live in-browser player. That mechanism is removed:
+ * video export (ADR-009) is now the primary deliverable, the live player is
+ * an internal debug tool only, and region-cropping was solving an
+ * asset-size problem that stopped mattering once video became the target —
+ * h265 inter-frame compression already handles "mostly static + one small
+ * moving region" content well on its own, and full-frame sampling also
+ * makes the region/base layout-shift drift bug ADR-010 describes
+ * structurally impossible (every frame is a complete, coherent screenshot,
+ * never a stale base + crop composite).
+ *
+ * `frames` is oversampled continuously during the real wait, then
+ * downsampled to an evenly-spaced, capped count once the real duration is
+ * known (see ASYNC_REGION_MAX_FRAMES in capture-demo.ts) — same "oversample
+ * then downsample" technique as before, just over full screenshots instead
+ * of crops.
+ */
+export interface AsyncWaitAction extends BaseEvent {
+  type: 'asyncWait';
+  /** CSS selector for the element whose change motivated this wait, for debugging/reference only. */
+  target: string;
+  /**
+   * Ordered sequence of full-screen screenshots sampled across the real
+   * wait, oversampled then downsampled to an evenly-spaced, capped count
+   * (see ASYNC_REGION_MAX_FRAMES in capture-demo.ts) — last element is
+   * always the final/representative frame, captured right at the idle
+   * transition.
+   */
+  frames: string[];
+  /**
+   * Real wall-clock duration (ms) of the actual wait. Informational only —
+   * NOT used for replay timing (that's `frameDurationMs`). Kept so a real
+   * capture's manifest documents how much dead air this event compressed.
+   */
+  realDurationMs: number;
+  /**
+   * Compressed replay duration (ms) the player should spend cycling through
+   * `frames` before holding on the last one — the actual time-compression
+   * mechanism. Unlike ScrollAction.frameDurationMs this is required, not
+   * optional: there's no sane frame-count-based default duration for a real
+   * wait that could be anywhere from a few seconds to over a minute.
+   */
+  frameDurationMs: number;
+}
+
+export type ManifestEvent = ClickAction | NavigateAction | CircleAction | ScrollAction | AsyncWaitAction;
 
 export interface Manifest {
   version: string;

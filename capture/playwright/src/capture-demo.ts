@@ -109,6 +109,102 @@ const DEFAULT_SCROLL_FRAME_COUNT = 6;
 // noticeable mid-animation, not just on pause.
 const SCROLL_FRAME_QUALITY = 20;
 
+// --- asyncWait full-screen sampling (see captureAsyncWait() below) ---
+// As of ADR-010, asyncWait frames are plain full-screen screenshots, not
+// region-cropped composites — see shared/manifest-types.ts's AsyncWaitAction
+// doc comment for why the region-crop version was removed. Same
+// transient-vs-lingering quality split as SCROLL_FRAME_QUALITY above is kept:
+// both are "a frame that's only ever on screen for a slice of a compressed
+// animation," so there's no reason to expect a different sweet spot here
+// without real measurements suggesting otherwise.
+const ASYNC_WAIT_FRAME_QUALITY = 20;
+// How often to sample a full-screen frame while the real wait is in flight.
+// 400ms keeps the determinate progress bar's motion legible (kitchen-sink's
+// PROGRESS_TICK_MS is 200ms, so this samples roughly every other real tick)
+// without oversampling a 40s wait into hundreds of frames we'd just throw
+// away at downsample time.
+const ASYNC_WAIT_SAMPLE_MS = 400;
+// Downsample cap, matching roadmap.md's asyncWait entry ("~4-6 frames —
+// enough to convey motion ... discard the rest"). One slot is always the
+// final/lingering full-quality frame, so this is "N-1 transient + 1 final."
+const ASYNC_WAIT_MAX_FRAMES = 6;
+// Compressed replay duration for cycling through the frames — within
+// roadmap.md's stated ~2-4s sensible-default band.
+const ASYNC_WAIT_DISPLAY_MS = 2500;
+
+/**
+ * Evenly samples `maxCount` items out of `items` (inclusive of both ends),
+ * preserving order. No-op if `items` already fits within `maxCount`. Used to
+ * downsample the raw oversampled region-crop buffers down to a small,
+ * evenly-spaced set after the real wait duration is known — see
+ * docs/roadmap.md's "oversample continuously, then downsample after the
+ * fact" refinement, which this is the first real implementation of (the
+ * scroll-frame downsampling above takes a simpler route since its full
+ * duration is chosen by the capture script itself, not discovered after the
+ * fact like a real-world async wait's duration is).
+ */
+function downsampleEvenly<T>(items: T[], maxCount: number): T[] {
+  if (maxCount <= 0 || items.length === 0) return [];
+  if (items.length <= maxCount) return items;
+  if (maxCount === 1) return [items[items.length - 1]];
+  const result: T[] = [];
+  for (let i = 0; i < maxCount; i++) {
+    const idx = Math.round((i * (items.length - 1)) / (maxCount - 1));
+    result.push(items[idx]);
+  }
+  return result;
+}
+
+/**
+ * Captures a long real wait as a sequence of full-screen screenshots,
+ * oversampled continuously while the wait is in flight and downsampled once
+ * the real duration is known — see roadmap.md's asyncWait entry and ADR-010
+ * (which removed an earlier region-cropped-composite version of this
+ * function; see that ADR for why full-screen sampling is now preferred over
+ * cropping, not just a fallback).
+ *
+ * Mechanism unchanged from the prior region-cropped version: polls the same
+ * `.app-shell[data-busy]` idle signal `waitForIdle()` uses elsewhere in this
+ * file, but — unlike `waitForFunction()` — does so in an explicit loop so a
+ * frame can be taken on *every* poll, not just once at the end. This is the
+ * "oversample continuously, downsample once real duration is known"
+ * technique from roadmap.md: it doesn't know or guess the wait's real
+ * duration upfront, it just keeps sampling every `ASYNC_WAIT_SAMPLE_MS`
+ * until the busy flag clears, then downsamples whatever it collected. The
+ * only change from before is *what* gets captured each poll — a full-page
+ * `page.screenshot()` instead of a `clip`-scoped crop — which also removes
+ * the prior version's documented bounding-box-drift risk entirely: there's
+ * no cached region rect to go stale, since every frame is a complete,
+ * self-contained screenshot.
+ */
+async function captureAsyncWait(
+  page: Page,
+  idleTimeoutMs: number,
+): Promise<{ rawFrames: Buffer[]; realDurationMs: number }> {
+  const start = Date.now();
+  const deadline = start + idleTimeoutMs;
+  const rawFrames: Buffer[] = [];
+  const isIdle = () =>
+    page.evaluate(() => {
+      const root = document.querySelector(".app-shell");
+      return !root || root.getAttribute("data-busy") !== "true";
+    });
+
+  // Capture-then-check, not check-then-capture: guarantees at least one
+  // frame even if the wait is already over by the time this function is
+  // called (shouldn't happen at this call site, but cheap to make safe).
+  for (;;) {
+    rawFrames.push(await page.screenshot());
+    if (await isIdle()) break;
+    if (Date.now() > deadline) {
+      throw new Error(`captureAsyncWait: timed out after ${idleTimeoutMs}ms waiting for idle`);
+    }
+    await page.waitForTimeout(ASYNC_WAIT_SAMPLE_MS);
+  }
+  const realDurationMs = Date.now() - start;
+  return { rawFrames, realDurationMs };
+}
+
 /**
  * Scrolls the page by `deltaY` px, then records the result as a real
  * 'scroll' manifest event (see shared/manifest-types.ts's ScrollAction) —
@@ -441,14 +537,16 @@ async function main(): Promise<void> {
       screenshotRef: await shot(session, page),
     });
 
-    // 11. Scroll down to the long async action and trigger it. This is the
-    // capture's slowest step by design — real-time elapsed here becomes the
-    // gap between this event's timestamp and the next, which the replay
-    // player turns straight into real-time dead air (see
-    // replay-player.component.ts: move-phase duration is just the raw
-    // manifest timestamp delta, with no compression). That dead air is
-    // exactly the problem docs/roadmap.md's `asyncWait` entry is meant to
-    // fix; this capture deliberately does NOT fix it.
+    // 11. Scroll down to the long async action and trigger it, then capture
+    // the real wait as a sequence of full-screen `asyncWait` frames instead
+    // of just waiting it out — see captureAsyncWait()'s doc comment for the
+    // mechanism, and shared/manifest-types.ts's AsyncWaitAction for what
+    // gets written to the manifest. This step originally just waited out
+    // the real ~40s with no compression at all (reading the dead air
+    // straight off the manifest's timestamp gap); a later iteration tried
+    // region-cropped compositing to save bytes for the live player, which
+    // ADR-010 then removed in favor of this full-screen version once video
+    // export (ADR-009) became the primary deliverable.
     // Animated as the second test case — confirmed via a real capture's
     // resulting `scrollY: ~1186.67` (started at 700, ~487px of real room
     // out of the requested 700 — still substantial, unlike the two scroll
@@ -478,7 +576,31 @@ async function main(): Promise<void> {
       screenshotRef: await shot(session, page), // captured immediately — shows the spinner/bar at ~0%
     });
 
-    await waitForIdle(page, ASYNC_IDLE_TIMEOUT_MS); // the real ~40s (or ~4s under FAST_ASYNC) wait happens here
+    const { rawFrames, realDurationMs } = await captureAsyncWait(page, ASYNC_IDLE_TIMEOUT_MS);
+
+    // Downsample to the capped count, reserving the last slot for a final,
+    // full-quality frame taken fresh (the loop's last rawFrame is whatever
+    // was on screen right as the busy flag cleared — close enough in
+    // practice, but taking one more after the loop exits guarantees the
+    // lingering frame shows the truly-settled state, not a mid-poll one).
+    const transientFrames = downsampleEvenly(rawFrames, Math.max(1, ASYNC_WAIT_MAX_FRAMES - 1));
+    const frames: string[] = [];
+    for (const buf of transientFrames) {
+      frames.push(await session.saveScreenshot(buf, { quality: ASYNC_WAIT_FRAME_QUALITY }));
+    }
+    frames.push(await session.saveScreenshot(await page.screenshot()));
+
+    session.addAsyncWait({
+      target: '[data-testid="kitchen-sink-async-active"]',
+      frames,
+      realDurationMs,
+      frameDurationMs: ASYNC_WAIT_DISPLAY_MS,
+      cursor: asyncTriggerCursor, // cursor doesn't move during the wait; reuse the trigger's position
+      screenshotRef: frames[frames.length - 1],
+      narrationShort: "Waiting for the action to finish.",
+      narrationLong: "The action runs in the background while a progress bar and spinner show it working, compressed here from its real duration.",
+    });
+
     const asyncResult = page.locator('[data-testid="kitchen-sink-async-result"]');
     session.addCircle({
       target: '[data-testid="kitchen-sink-async-result"]',

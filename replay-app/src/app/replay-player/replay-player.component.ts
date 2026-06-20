@@ -139,7 +139,25 @@ type ScrollPhase = {
   frames: string[];
   narration?: HTMLAudioElement | null;
 };
-type Phase = ShowPhase | MovePhase | CirclePhase | ScrollPhase;
+// Compressed real-wait phase for the AsyncWaitAction manifest type (see
+// shared/manifest-types.ts) — cursor stays parked at `x`/`y` (no motion;
+// it's already resting wherever the wait-triggering click landed) while the
+// full-screen `screenshot` itself cycles through `frames` as frac advances —
+// see sampleAt()'s 'asyncWait' branch. As of ADR-010 this is plain
+// full-screen frame-swapping, not a region-cropped composite over a held
+// base frame (that version's removed; see the ADR for why). Mirrors
+// replay/player.js's identical 'asyncWait' phase kind.
+type AsyncWaitPhase = {
+  kind: 'asyncWait';
+  t0: number;
+  t1: number;
+  x: number;
+  y: number;
+  screenshot: string;
+  frames: string[];
+  narration?: HTMLAudioElement | null;
+};
+type Phase = ShowPhase | MovePhase | CirclePhase | ScrollPhase | AsyncWaitPhase;
 
 type Sample = {
   x: number;
@@ -427,8 +445,35 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
       let movePhaseRef: MovePhase | null = null;
       let circlePhaseRef: CirclePhase | null = null;
       let scrollPhaseRef: ScrollPhase | null = null;
+      let asyncWaitPhaseRef: AsyncWaitPhase | null = null;
 
-      if (ev.type === 'scroll' && ev.frames && ev.frames.length > 1) {
+      if (ev.type === 'asyncWait') {
+        // No move-in glide at all (unlike the clamped default branch below)
+        // — the cursor is already exactly where it needs to be (the wait-
+        // triggering click's position, reused verbatim as this event's
+        // cursor — see capture-demo.ts's step 11), so there's nothing to
+        // glide toward. This mirrors player.js's identical special case;
+        // see that file's buildTimeline() comment for the full reasoning
+        // (this event's raw `ev.timestamp - prevManifestEnd` gap bakes in
+        // the entire real wait, which the MOVE_MIN_MS/MOVE_MAX_MS clamp
+        // below would otherwise still turn into an unnecessary ~2.2s glide
+        // phase rather than true dead air — harmless given from === to, but
+        // wasted regardless).
+        const t1 = prev.t + ev.frameDurationMs;
+        asyncWaitPhaseRef = {
+          kind: 'asyncWait',
+          t0: prev.t,
+          t1,
+          x: ev.cursor.x,
+          y: ev.cursor.y,
+          screenshot: ev.screenshotRef,
+          frames: ev.frames,
+        };
+        phases.push(asyncWaitPhaseRef);
+        visualDuration += ev.frameDurationMs;
+        prev = { x: ev.cursor.x, y: ev.cursor.y, t: t1, screenshot: ev.screenshotRef };
+        prevManifestEnd = ev.timestamp;
+      } else if (ev.type === 'scroll' && ev.frames && ev.frames.length > 1) {
         // Animated scroll (opted in at capture time — see scrollToAndRecord()
         // in capture-demo.ts and ScrollAction's `frames` field in
         // shared/manifest-types.ts) — the cursor stays parked at its
@@ -583,9 +628,9 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
 
       // Trigger narration at whichever phase starts this step (move — which
       // now also covers non-animated scrolls — else circle, else the
-      // animated-scroll phase, else — if the step has no visual duration at
-      // all — the extra hold phase below).
-      const narrationOwner = movePhaseRef || circlePhaseRef || scrollPhaseRef;
+      // animated-scroll phase, else the asyncWait phase, else — if the step
+      // has no visual duration at all — the extra hold phase below).
+      const narrationOwner = movePhaseRef || circlePhaseRef || scrollPhaseRef || asyncWaitPhaseRef;
       if (narration && narration.el && narrationOwner) {
         narrationOwner.narration = narration.el;
       }
@@ -655,6 +700,22 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
       // already pointed to before animation existed.
       const index = Math.min(phase.frames.length - 1, Math.floor(frac * phase.frames.length));
       return { x: phase.x, y: phase.y, screenshot: phase.frames[index], orbit: null };
+    }
+
+    if (phase.kind === 'asyncWait') {
+      // Cursor stays parked (same reasoning as 'scroll' above); the
+      // full-screen background itself cycles through `frames` as frac
+      // advances — same mechanism as 'scroll' above, just with the
+      // downsampled real-wait frames instead of scroll-animation frames.
+      // Mirrors player.js's identical 'asyncWait' branch in sampleAt().
+      const index =
+        phase.frames.length > 0 ? Math.min(phase.frames.length - 1, Math.floor(frac * phase.frames.length)) : -1;
+      return {
+        x: phase.x,
+        y: phase.y,
+        screenshot: index >= 0 ? phase.frames[index] : phase.screenshot,
+        orbit: null,
+      };
     }
 
     // circle
@@ -823,15 +884,18 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
     const built = this.buildTimeline(manifest, getNarration);
     this.timeline = { ...built, baseDir };
 
-    // Include animated-scroll `frames` alongside each event's own
-    // screenshotRef — otherwise an animated scroll's intermediate frames
-    // would never get preloaded into `this.images` and sampleAt()'s
-    // 'scroll' branch would draw nothing for them.
+    // Include animated-scroll `frames` and asyncWait `frames` alongside each
+    // event's own screenshotRef — otherwise those intermediate full-screen
+    // images would never get preloaded into `this.images`, and sampleAt()'s
+    // 'scroll'/'asyncWait' branches would pick a `src` that render() can't
+    // find anything to draw for.
     const refs = Array.from(
       new Set(
-        manifest.events.flatMap((e) =>
-          e.type === 'scroll' && e.frames ? [e.screenshotRef, ...e.frames] : [e.screenshotRef]
-        )
+        manifest.events.flatMap((e) => {
+          if (e.type === 'scroll' && e.frames) return [e.screenshotRef, ...e.frames];
+          if (e.type === 'asyncWait') return [e.screenshotRef, ...e.frames];
+          return [e.screenshotRef];
+        })
       )
     );
     this.status.set('Loading ' + refs.length + ' screenshot(s)…');
