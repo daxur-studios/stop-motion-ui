@@ -94,7 +94,23 @@ export interface AddAsyncWaitArgs {
   /** Must have at least 1 element; last is treated as the lingering/full-quality frame — see AsyncWaitAction's doc comment. */
   frames: string[];
   realDurationMs: number;
+  /**
+   * Default/requested compressed display duration (ms). If `maxDisplayMs` is
+   * also given, the *effective* duration written to the manifest is
+   * `min(realDurationMs, maxDisplayMs)` instead — see `addAsyncWait()`.
+   */
   frameDurationMs: number;
+  /**
+   * Optional per-action authoring-time cap (ms) — see AsyncWaitAction's doc
+   * comment in manifest-types.ts. When provided, overrides `frameDurationMs`
+   * as the duration ceiling (still clamped to `realDurationMs`, since
+   * "compressed" duration should never exceed the real wait it stands in for).
+   */
+  maxDisplayMs?: number;
+  /** See AsyncWaitAction.speedupIndicator. Defaults to true (when compression is applied) if omitted. */
+  speedupIndicator?: boolean;
+  /** See AsyncWaitAction.speedupIndicatorCorner. Defaults to 'top-right' if omitted. */
+  speedupIndicatorCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   cursor: XY;
   screenshotRef: string;
   id?: string;
@@ -233,6 +249,16 @@ export class CaptureSession {
     if (args.frames.length === 0) {
       throw new Error('addAsyncWait: frames must have at least one element (the lingering/full-quality frame)');
     }
+    // Effective display duration: the requested/default frameDurationMs,
+    // capped by maxDisplayMs if the caller set one, and never longer than
+    // the real wait itself (a "compressed" duration that exceeds the real
+    // duration isn't compression). See AddAsyncWaitArgs.maxDisplayMs and
+    // AsyncWaitAction.maxDisplayMs's doc comments for why this lives here
+    // rather than being recomputed downstream by the players/export pipeline.
+    const effectiveFrameDurationMs = Math.min(
+      args.realDurationMs,
+      args.maxDisplayMs ?? args.frameDurationMs,
+    );
     const event: AsyncWaitAction = {
       id: args.id ?? `asyncwait-${this.seq}`,
       type: 'asyncWait',
@@ -242,7 +268,10 @@ export class CaptureSession {
       target: args.target,
       frames: args.frames,
       realDurationMs: args.realDurationMs,
-      frameDurationMs: args.frameDurationMs,
+      frameDurationMs: effectiveFrameDurationMs,
+      ...(args.maxDisplayMs !== undefined ? { maxDisplayMs: args.maxDisplayMs } : {}),
+      ...(args.speedupIndicator !== undefined ? { speedupIndicator: args.speedupIndicator } : {}),
+      ...(args.speedupIndicatorCorner ? { speedupIndicatorCorner: args.speedupIndicatorCorner } : {}),
       ...(args.narrationShort ? { narrationShort: args.narrationShort } : {}),
       ...(args.narrationLong ? { narrationLong: args.narrationLong } : {}),
     };

@@ -1,0 +1,46 @@
+{
+  "version": "1.0.0",
+  "capturedAt": "2026-06-20T00:00:00.000Z",
+  "backend": "playwright",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "seed": 42,
+  "events": [
+    {
+      "id": "nav-1",
+      "type": "navigate",
+      "timestamp": 0,
+      "cursor": {
+        "x": 0,
+        "y": 0,
+        "timestamp": 0
+      },
+      "screenshotRef": "screenshots/0001.png",
+      "url": "https://example.test/export-tool"
+    },
+    {
+      "id": "asyncwait-2",
+      "type": "asyncWait",
+      "timestamp": 800,
+      "cursor": {
+        "x": 1120,
+        "y": 80,
+        "timestamp": 800
+      },
+      "screenshotRef": "screenshots/0007.png",
+      "target": "[data-testid=\"export-progress\"]",
+      "frames": [
+        "screenshots/0002.png",
+        "screenshots/0003.png",
+        "screenshots/0004.png",
+        "screenshots/0005.png",
+        "screenshots/0006.png",
+        "screenshots/0007.png"
+      ],
+      "realDurationMs": 42000,
+      "frameDurationMs": 3000
+    }
+  ]
+}

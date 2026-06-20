@@ -1,8 +1,10 @@
 # Roadmap / Future Ideas
 
+See also: [`docs/agent-maintainability.md`](./agent-maintainability.md) — what it takes for an AI agent to verify its own changes to this codebase without a human checking screenshots, what's missing today, and concrete next steps.
+
 ## Feature: Headless video export — ✅ Done
 
-- Exports a scenario (screenshots + bezier cursor motion + circle gestures + asyncWait region-crops + TTS narration) as a real compressed `.mp4`, instead of only playing live in-browser.
+- Exports a scenario (screenshots + bezier cursor motion + circle gestures + asyncWait full-frame cycling + TTS narration) as a real compressed `.mp4`, instead of only playing live in-browser. **Video export is now the primary deliverable; the live in-browser players are an internal debug/preview tool only — see ADR-010.**
 - Run via `node scripts/export-video.mjs <scenario-dir> [--fps=30] [--narration=short|long|off] [--out=<path>]`.
 - Pipeline: `scripts/build-frame-plan.mjs` (Node port of `buildTimeline()`/`sampleAt()`/`drawRipples()` math, no rendering) → `scripts/render-frames.py` (Pillow rasterizes to a PNG sequence — no browser/node-canvas/sharp available in this sandbox, see ADR-009) → `ffmpeg` (mixes discrete narration clips via `adelay`+`amix`, then final-encodes frames+audio using Daxur-Daemon's exact `compress.ts` settings: `libx265 -crf 28 -preset medium -tag:v hvc1 -pix_fmt yuv420p`, `aac 128k`).
 - See ADR-009 for the full architecture, why node-canvas/sharp were ruled out, and the verified end-to-end run against scenario-1.
@@ -32,6 +34,7 @@
 
 ## Feature: `asyncWait` action (time-compressed long waits) — 🔧 Prototyped, unverified live
 
+- **Superseded in part by ADR-010 (video-first pivot): the region-crop compositing design described throughout this entry (`regionRect`, `captureAsyncRegionWait()`, the bounding-box-drift and element-resize risks below) has been removed from the codebase.** `AsyncWaitAction` now uses plain full-screen `frames` (same shape as `ScrollAction.frames`), matching how the video-export pipeline (ADR-009) and both live players now actually behave. This section is kept as-is below for historical record per house ADR-amendment practice — see ADR-010 for what changed and why, and for the full-frame export verification (23,258 bytes / 3.6s on a synthetic asyncWait scenario).
 - Problem: long async waits (e.g. a 30-50s loading spinner/progress bar) shouldn't be skipped entirely (reads as fake/instant) or shown at real duration (dead air) — stop-motion-ui captures sparse screenshots, not video, so this needs time-compression, not a "skip video segment" mechanism
 - **What's now actually built** (capture + manifest + both replay players), combining the original `asyncWait` idea below with the region-crop compositing idea from `docs/open-questions.md` and the same low/full-quality split already used for animated scroll frames:
   - **Manifest**: new `AsyncWaitAction` type in `shared/manifest-types.ts` (not a field bolted onto an existing type) — `regionRect` (the captured crop's bounding box, measured once), `frames` (ordered region-cropped — not full-screen — screenshots), `realDurationMs` (informational), `frameDurationMs` (required; the compressed replay duration). `screenshotRef` (inherited from `BaseEvent`) is the static full-screen base frame the crops get composited onto, captured once at the very start of the wait, reused from the triggering click's own screenshot. `CaptureSession.addAsyncWait()` wires it into the existing capture-session API alongside `addClick`/`addCircle`/`addScroll`.

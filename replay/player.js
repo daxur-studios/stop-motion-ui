@@ -314,6 +314,13 @@
         // phase (in replay-app's Angular player only, not this file) cycles
         // full-screen background frames.
         const t1 = prev.t + ev.frameDurationMs;
+        // "Sped up" badge — only when real compression actually happened
+        // (realDurationMs > frameDurationMs; after CaptureSession.addAsyncWait()'s
+        // clamp, frameDurationMs can never exceed realDurationMs, so a strict
+        // `>` here is exactly "was anything actually compressed"). Defaults to
+        // shown — see ADR-011 for why on-by-default was chosen over opt-in.
+        const isCompressed = ev.realDurationMs > ev.frameDurationMs;
+        const showSpeedup = isCompressed && ev.speedupIndicator !== false;
         asyncWaitPhaseRef = {
           kind: 'asyncWait',
           t0: prev.t,
@@ -322,6 +329,9 @@
           y: ev.cursor.y,
           screenshot: ev.screenshotRef,
           frames: ev.frames,
+          speedup: showSpeedup
+            ? { label: Math.round(ev.realDurationMs / ev.frameDurationMs) + 'x', corner: ev.speedupIndicatorCorner || 'top-right' }
+            : null,
         };
         phases.push(asyncWaitPhaseRef);
         visualDuration += ev.frameDurationMs;
@@ -435,6 +445,7 @@
         screenshot: frameIndex >= 0 ? phase.frames[frameIndex] : phase.screenshot,
         ripple: null,
         orbit: null,
+        speedup: phase.speedup || null,
       };
     }
 

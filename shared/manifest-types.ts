@@ -140,7 +140,7 @@ export interface CircleAction extends BaseEvent {
  *
  * `frames` is oversampled continuously during the real wait, then
  * downsampled to an evenly-spaced, capped count once the real duration is
- * known (see ASYNC_REGION_MAX_FRAMES in capture-demo.ts) — same "oversample
+ * known (see ASYNC_WAIT_MAX_FRAMES in capture-demo.ts) — same "oversample
  * then downsample" technique as before, just over full screenshots instead
  * of crops.
  */
@@ -151,7 +151,7 @@ export interface AsyncWaitAction extends BaseEvent {
   /**
    * Ordered sequence of full-screen screenshots sampled across the real
    * wait, oversampled then downsampled to an evenly-spaced, capped count
-   * (see ASYNC_REGION_MAX_FRAMES in capture-demo.ts) — last element is
+   * (see ASYNC_WAIT_MAX_FRAMES in capture-demo.ts) — last element is
    * always the final/representative frame, captured right at the idle
    * transition.
    */
@@ -170,6 +170,39 @@ export interface AsyncWaitAction extends BaseEvent {
    * wait that could be anywhere from a few seconds to over a minute.
    */
   frameDurationMs: number;
+  /**
+   * Optional authoring-time cap (ms) on how long this specific wait may
+   * occupy in the final replay/video — e.g. "max 2 seconds for this async
+   * action." Distinct from the viewer's global playback-speed multiplier
+   * (0.5x/1x/2x, applied uniformly at playback time): this is a per-action
+   * value baked in once, at capture time, into `frameDurationMs` itself
+   * (`CaptureSession.addAsyncWait()` computes
+   * `frameDurationMs = min(realDurationMs, maxDisplayMs ?? frameDurationMs)`
+   * — see that method). Stored here mainly so the manifest documents *why*
+   * `frameDurationMs` has the value it has; neither player nor the
+   * video-export pipeline read `maxDisplayMs` directly, they only ever
+   * consume the already-computed `frameDurationMs`. Omit to fall back to
+   * the capture script's own default duration (see `ASYNC_WAIT_DISPLAY_MS`
+   * in capture-demo.ts).
+   */
+  maxDisplayMs?: number;
+  /**
+   * Whether to render a small "sped up" badge (e.g. "14x") during this
+   * phase. Only ever shown when real time-compression was actually applied
+   * (`realDurationMs > frameDurationMs`) — if the real wait was already
+   * shorter than the display duration, there's nothing to disclose, so the
+   * badge never renders regardless of this flag. Defaults to **true** when
+   * compression is applied and this field is omitted — see ADR-011 for why
+   * on-by-default was chosen over opt-in. Set to `false` to suppress it for
+   * a specific action.
+   */
+  speedupIndicator?: boolean;
+  /**
+   * Corner the sped-up badge renders in, when shown. Defaults to
+   * `'top-right'`. Only meaningful when the badge is actually showing (see
+   * `speedupIndicator` above).
+   */
+  speedupIndicatorCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 }
 
 export type ManifestEvent = ClickAction | NavigateAction | CircleAction | ScrollAction | AsyncWaitAction;
