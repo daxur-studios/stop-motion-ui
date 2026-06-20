@@ -8,7 +8,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const scenariosDir = path.resolve(__dirname, '../replay-app/public/test-scenarios');
 const scriptPath = path.join(__dirname, 'generate-narration.mjs');
 
-const scenarios = ['scenario-1', 'scenario-2', 'scenario-3', 'daxur-daemon'];
+// Discover scenarios dynamically — any direct subdirectory of scenariosDir
+// that contains a manifest.json. Previously this was a hardcoded array, which
+// silently skipped any new scenario directory (e.g. demo-gallery) added after
+// the list was last updated. Don't reintroduce a hardcoded list here.
+function discoverScenarios(dir) {
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((name) => fs.existsSync(path.join(dir, name, 'manifest.json')))
+    .sort();
+}
+
+const scenarios = discoverScenarios(scenariosDir);
+console.log(`Discovered ${scenarios.length} scenario(s): ${scenarios.join(', ')}`);
 
 console.log('Starting batch narration generation...');
 for (const sc of scenarios) {

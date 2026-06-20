@@ -21,8 +21,8 @@
       "url": "http://localhost:17473/",
       "narrationShort": "Welcome to Daxur Daemon.",
       "narrationLong": "Welcome to Daxur Daemon, your local-first developer assistant and background coordinator.",
-      "narrationAudioShort": "narration/nav-1-short.wav",
-      "narrationAudioLong": "narration/nav-1-long.wav"
+      "narrationAudioShort": "narration/nav-1-short.ogg",
+      "narrationAudioLong": "narration/nav-1-long.ogg"
     },
     {
       "id": "click-2",
@@ -37,8 +37,8 @@
       "target": "[data-testid=\"sidenav-chat\"]",
       "narrationShort": "Let's open the chat menu.",
       "narrationLong": "First, let's open the Chat view where we can speak directly with daemon AI personas.",
-      "narrationAudioShort": "narration/click-2-short.wav",
-      "narrationAudioLong": "narration/click-2-long.wav"
+      "narrationAudioShort": "narration/click-2-short.ogg",
+      "narrationAudioLong": "narration/click-2-long.ogg"
     },
     {
       "id": "click-3",
@@ -53,8 +53,8 @@
       "target": "[data-testid=\"chat-new-chat-button\"]",
       "narrationShort": "Start a new chat.",
       "narrationLong": "Click the New Chat button to initialize a fresh session with the daemon.",
-      "narrationAudioShort": "narration/click-3-short.wav",
-      "narrationAudioLong": "narration/click-3-long.wav"
+      "narrationAudioShort": "narration/click-3-short.ogg",
+      "narrationAudioLong": "narration/click-3-long.ogg"
     },
     {
       "id": "click-4",
@@ -69,8 +69,8 @@
       "target": "[data-testid=\"chat-textarea\"]",
       "narrationShort": "Enter a prompt.",
       "narrationLong": "We select the chat composer and input a prompt to request a daemon status check.",
-      "narrationAudioShort": "narration/click-4-short.wav",
-      "narrationAudioLong": "narration/click-4-long.wav"
+      "narrationAudioShort": "narration/click-4-short.ogg",
+      "narrationAudioLong": "narration/click-4-long.ogg"
     },
     {
       "id": "click-5",
@@ -85,8 +85,8 @@
       "target": "[data-testid=\"chat-send-button\"]",
       "narrationShort": "Send query and watch response stream in.",
       "narrationLong": "After clicking send, the query is dispatched and the daemon streams its reasoning and result back live.",
-      "narrationAudioShort": "narration/click-5-short.wav",
-      "narrationAudioLong": "narration/click-5-long.wav"
+      "narrationAudioShort": "narration/click-5-short.ogg",
+      "narrationAudioLong": "narration/click-5-long.ogg"
     },
     {
       "id": "click-6",
@@ -101,8 +101,8 @@
       "target": "[data-testid=\"sidenav-kanban\"]",
       "narrationShort": "Open the Kanban view.",
       "narrationLong": "Next, we navigate to the Kanban board to inspect the queue of scheduled daemon tasks.",
-      "narrationAudioShort": "narration/click-6-short.wav",
-      "narrationAudioLong": "narration/click-6-long.wav"
+      "narrationAudioShort": "narration/click-6-short.ogg",
+      "narrationAudioLong": "narration/click-6-long.ogg"
     },
     {
       "id": "circle-7",
@@ -119,8 +119,8 @@
       "duration": 1500,
       "narrationShort": "Observe background tasks.",
       "narrationLong": "Notice how scheduled tasks, runs, and heartbeats are organized and monitored in columns.",
-      "narrationAudioShort": "narration/circle-7-short.wav",
-      "narrationAudioLong": "narration/circle-7-long.wav"
+      "narrationAudioShort": "narration/circle-7-short.ogg",
+      "narrationAudioLong": "narration/circle-7-long.ogg"
     },
     {
       "id": "click-8",
@@ -135,8 +135,8 @@
       "target": "[data-testid=\"sidenav-dashboard\"]",
       "narrationShort": "Return to Dashboard.",
       "narrationLong": "Finally, we return to the main dashboard summary where system states are aggregated.",
-      "narrationAudioShort": "narration/click-8-short.wav",
-      "narrationAudioLong": "narration/click-8-long.wav"
+      "narrationAudioShort": "narration/click-8-short.ogg",
+      "narrationAudioLong": "narration/click-8-long.ogg"
     }
   ]
 }

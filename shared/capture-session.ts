@@ -27,6 +27,7 @@ import type {
   ClickAction,
   NavigateAction,
   CircleAction,
+  ScrollAction,
   CursorPoint,
 } from './manifest-types.js';
 
@@ -72,6 +73,21 @@ export interface AddCircleArgs {
   narrationLong?: string;
 }
 
+export interface AddScrollArgs {
+  /** Page's scrollY (px) immediately after the scroll — informational only. */
+  scrollY: number;
+  /** Position of the *upcoming* interaction target, post-scroll — see ScrollAction's doc comment. */
+  cursor: XY;
+  screenshotRef: string;
+  /** Optional animated-scroll frame sequence — see ScrollAction's doc comment in manifest-types.ts. */
+  frames?: string[];
+  /** Optional explicit replay duration (ms) for the `frames` animation — see ScrollAction's doc comment. */
+  frameDurationMs?: number;
+  id?: string;
+  narrationShort?: string;
+  narrationLong?: string;
+}
+
 export class CaptureSession {
   private manifest: Manifest;
   private outDir: string;
@@ -104,14 +120,23 @@ export class CaptureSession {
 
   /**
    * Compresses a raw screenshot buffer (straight from Playwright's
-   * `page.screenshot()`) using the exact mozjpeg/quality-80 settings from
-   * ADR-003, writes it into screenshots/, and returns the manifest-relative
-   * `screenshotRef` (e.g. "screenshots/0001.jpg") ready to pass to
-   * addNavigate/addClick/addCircle.
+   * `page.screenshot()`) using mozjpeg, writes it into screenshots/, and
+   * returns the manifest-relative `screenshotRef` (e.g. "screenshots/0001.jpg")
+   * ready to pass to addNavigate/addClick/addCircle/addScroll.
+   *
+   * `quality` defaults to **80** — the ADR-003 setting used for every
+   * "real" frame (the one a step actually holds on). Pass a lower value for
+   * high-volume, low-individual-value frames where this default would be
+   * wasteful — the original motivating case is scroll-animation frames
+   * (see scrollToAndRecord()'s `SCROLL_FRAME_QUALITY` in capture-demo.ts):
+   * each one is only ever on screen for a fraction of a short animation, so
+   * spending full quality-80 budget on all of them (frameCount per scroll,
+   * by default 6-12) adds up fast for frames nobody pauses on individually.
    */
-  async saveScreenshot(rawBuffer: Buffer): Promise<string> {
+  async saveScreenshot(rawBuffer: Buffer, opts?: { quality?: number }): Promise<string> {
+    const quality = opts?.quality ?? 80;
     const name = this.nextScreenshotName();
-    const compressed = await sharp(rawBuffer).jpeg({ mozjpeg: true, quality: 80 }).toBuffer();
+    const compressed = await sharp(rawBuffer).jpeg({ mozjpeg: true, quality }).toBuffer();
     writeFileSync(join(this.screenshotsDir, name), compressed);
     return `screenshots/${name}`;
   }
@@ -164,6 +189,25 @@ export class CaptureSession {
       target: args.target,
       radius: args.radius,
       duration: args.duration,
+      ...(args.narrationShort ? { narrationShort: args.narrationShort } : {}),
+      ...(args.narrationLong ? { narrationLong: args.narrationLong } : {}),
+    };
+    this.manifest.events.push(event);
+    return event;
+  }
+
+  addScroll(args: AddScrollArgs): ScrollAction {
+    const event: ScrollAction = {
+      id: args.id ?? `scroll-${this.seq}`,
+      type: 'scroll',
+      timestamp: this.elapsed(),
+      cursor: this.cursorAt(args.cursor.x, args.cursor.y),
+      screenshotRef: args.screenshotRef,
+      scrollY: args.scrollY,
+      ...(args.frames && args.frames.length > 1 ? { frames: args.frames } : {}),
+      ...(args.frames && args.frames.length > 1 && args.frameDurationMs
+        ? { frameDurationMs: args.frameDurationMs }
+        : {}),
       ...(args.narrationShort ? { narrationShort: args.narrationShort } : {}),
       ...(args.narrationLong ? { narrationLong: args.narrationLong } : {}),
     };

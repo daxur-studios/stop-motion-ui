@@ -25,11 +25,12 @@ import { KitchenSinkDialogComponent } from './kitchen-sink-dialog.component';
 //   - A mat-select and a mat-dialog, mostly to round out Material coverage
 //     (overlay positioning, backdrop) rather than to probe a specific gap.
 //   - Long filler sections between the interactive bits so reaching the
-//     later ones requires real scrolling — capture/playwright has no
-//     scroll action type yet (see shared/manifest-types.ts's Phase 2 note),
-//     so scrolling between elements currently has no manifest
-//     representation at all: the replay just jumps straight to whatever
-//     the next screenshot shows, however far down the page it was taken.
+//     later ones requires real scrolling — capture/playwright now records
+//     each scroll as a real 'scroll' manifest event (see
+//     shared/manifest-types.ts's ScrollAction), specifically to fix a click-
+//     misalignment bug this fixture originally surfaced: without it, the
+//     click right after a scroll showed its cursor glide over the
+//     *pre-scroll* screenshot while aiming at *post-scroll* coordinates.
 const DEFAULT_ASYNC_DURATION_MS = 40_000; // realistic long wait, mid-range of the 30-50s target
 const FAST_ASYNC_DURATION_MS = 4_000; // dev-iteration shortcut, see resolveAsyncDurationMs()
 const PROGRESS_TICK_MS = 200; // determinate progress-bar update cadence

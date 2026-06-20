@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Pre-generates narration audio for a replay manifest via Daxur-Daemon's local
 // Chatterbox TTS server (OpenAI-compatible /v1/audio/speech route). See ADR-004
-// for why this is a pre-generation/caching step rather than live in-browser TTS.
+// for why this is a pre-generation/caching step rather than live in-browser TTS,
+// and ADR-008 for why the cached audio is compressed Ogg/Opus rather than WAV.
 //
 // Usage:
 //   node scripts/generate-narration.mjs <scenario-dir> [--voice=Abigail.wav] [--seed=42] [--force]
@@ -11,9 +12,11 @@
 //
 // For each event in <scenario-dir>/manifest.json that has a `narrationShort`
 // and/or `narrationLong` text field, this calls the TTS server once per
-// variant present, writes the resulting .wav into <scenario-dir>/narration/,
-// and fills in the matching `narrationAudioShort` / `narrationAudioLong`
-// manifest field with the relative path. The manifest is rewritten in place.
+// variant present, requesting `response_format: 'opus'` so Chatterbox itself
+// returns a compressed Ogg/Opus stream (no separate transcode step needed —
+// see ADR-008). The result is written as .ogg into <scenario-dir>/narration/,
+// and the matching `narrationAudioShort` / `narrationAudioLong` manifest field
+// is filled in with the relative path. The manifest is rewritten in place.
 //
 // Requires the Chatterbox TTS server to be running and reachable at
 // http://localhost:8004 (either via `docker-compose up chatterbox-tts`, or
@@ -53,6 +56,13 @@ async function fileExists(p) {
   }
 }
 
+// Chatterbox's OpenAI-compatible endpoint natively supports `response_format:
+// 'opus'` (in addition to 'wav'/'mp3') — it encodes server-side via libsndfile
+// (Ogg container, Opus codec) before the bytes ever leave the TTS server, so
+// no ffmpeg/post-processing step is needed here. See ADR-008.
+const RESPONSE_FORMAT = 'opus';
+const AUDIO_EXT = 'ogg'; // Ogg-encapsulated Opus — plays natively via <audio> in Chrome/Edge/Firefox.
+
 async function synthesize(text, voice, seed) {
   const res = await fetch(TTS_URL, {
     method: 'POST',
@@ -61,7 +71,7 @@ async function synthesize(text, voice, seed) {
       model: 'chatterbox',
       input: text,
       voice,
-      response_format: 'wav',
+      response_format: RESPONSE_FORMAT,
       speed: 1.0,
       seed,
     }),
@@ -99,7 +109,7 @@ async function main() {
       const text = ev[textField];
       if (!text) continue;
 
-      const fileName = `${ev.id}-${label}.wav`;
+      const fileName = `${ev.id}-${label}.${AUDIO_EXT}`;
       const relPath = `narration/${fileName}`;
       const absPath = path.join(narrationDir, fileName);
 

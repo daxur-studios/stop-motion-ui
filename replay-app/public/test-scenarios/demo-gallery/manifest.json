@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "capturedAt": "2026-06-19T23:35:21.158Z",
+  "capturedAt": "2026-06-20T12:14:24.737Z",
   "backend": "playwright",
   "viewport": {
     "width": 1280,
@@ -11,236 +11,347 @@
     {
       "id": "nav-1",
       "type": "navigate",
-      "timestamp": 1426,
+      "timestamp": 1291,
       "cursor": {
         "x": 0,
         "y": 0,
-        "timestamp": 1426
+        "timestamp": 1291
       },
       "screenshotRef": "screenshots/0001.jpg",
-      "url": "http://localhost:4221/"
+      "url": "http://localhost:4221/",
+      "narrationShort": "Starting on the Replay Player view.",
+      "narrationLong": "This is the Replay Player view, where a previously captured manifest plays back."
     },
     {
       "id": "click-2",
       "type": "click",
-      "timestamp": 1582,
+      "timestamp": 1467,
       "cursor": {
-        "x": 637,
-        "y": 28,
-        "timestamp": 1582
+        "x": 643,
+        "y": 30,
+        "timestamp": 1467
       },
       "screenshotRef": "screenshots/0002.jpg",
-      "target": "[data-testid=\"nav-demos\"]"
+      "target": "[data-testid=\"nav-demos\"]",
+      "narrationShort": "Switching to the Demo Gallery.",
+      "narrationLong": "Clicking the Demo Gallery tab navigates to a page with several small example widgets."
     },
     {
       "id": "click-3",
       "type": "click",
-      "timestamp": 1690,
+      "timestamp": 1586,
       "cursor": {
-        "x": 410,
-        "y": 154,
-        "timestamp": 1690
+        "x": 411,
+        "y": 158,
+        "timestamp": 1586
       },
       "screenshotRef": "screenshots/0003.jpg",
-      "target": "[data-testid=\"demo-counter-increment\"]"
+      "target": "[data-testid=\"demo-counter-increment\"]",
+      "narrationShort": "Incrementing the counter.",
+      "narrationLong": "Clicking the increment button increases the counter value by one."
     },
     {
       "id": "click-4",
       "type": "click",
-      "timestamp": 1799,
+      "timestamp": 1700,
       "cursor": {
-        "x": 410,
-        "y": 154,
-        "timestamp": 1799
+        "x": 411,
+        "y": 158,
+        "timestamp": 1700
       },
       "screenshotRef": "screenshots/0004.jpg",
-      "target": "[data-testid=\"demo-counter-increment\"]"
+      "target": "[data-testid=\"demo-counter-increment\"]",
+      "narrationShort": "Incrementing the counter.",
+      "narrationLong": "Clicking the increment button increases the counter value by one."
     },
     {
       "id": "circle-5",
       "type": "circle",
-      "timestamp": 1884,
+      "timestamp": 1780,
       "cursor": {
         "x": 640,
-        "y": 109,
-        "timestamp": 1884
+        "y": 112,
+        "timestamp": 1780
       },
       "screenshotRef": "screenshots/0005.jpg",
       "target": "[data-testid=\"demo-counter-value\"]",
       "radius": 40,
-      "duration": 1200
+      "duration": 1200,
+      "narrationShort": "Here is the updated count.",
+      "narrationLong": "Circling the counter value draws attention to the result after both increments."
     },
     {
       "id": "click-6",
       "type": "click",
-      "timestamp": 2399,
+      "timestamp": 1919,
       "cursor": {
         "x": 374,
-        "y": 382,
-        "timestamp": 2399
+        "y": 388,
+        "timestamp": 1919
       },
       "screenshotRef": "screenshots/0006.jpg",
-      "target": "[data-testid=\"demo-form-submit\"]"
+      "target": "[data-testid=\"demo-form-submit\"]",
+      "narrationShort": "Submitting the form.",
+      "narrationLong": "After filling in a name and email, submitting the form waits out a simulated network delay before confirming."
     },
     {
       "id": "click-7",
       "type": "click",
-      "timestamp": 6963,
+      "timestamp": 2461,
       "cursor": {
-        "x": 433,
-        "y": 553,
-        "timestamp": 6963
+        "x": 434,
+        "y": 559,
+        "timestamp": 2461
       },
       "screenshotRef": "screenshots/0007.jpg",
-      "target": "[data-testid=\"demo-wizard-next\"]"
+      "target": "[data-testid=\"demo-wizard-next\"]",
+      "narrationShort": "Wizard step 1 of 3.",
+      "narrationLong": "Clicking Next advances the wizard from step 1 to the following step."
     },
     {
       "id": "click-8",
       "type": "click",
-      "timestamp": 7096,
+      "timestamp": 2573,
       "cursor": {
-        "x": 433,
-        "y": 553,
-        "timestamp": 7096
+        "x": 434,
+        "y": 473,
+        "timestamp": 2573
       },
       "screenshotRef": "screenshots/0008.jpg",
-      "target": "[data-testid=\"demo-wizard-next\"]"
+      "target": "[data-testid=\"demo-wizard-next\"]",
+      "narrationShort": "Wizard step 2 of 3.",
+      "narrationLong": "Clicking Next advances the wizard from step 2 to the following step."
     },
     {
       "id": "click-9",
       "type": "click",
-      "timestamp": 7222,
+      "timestamp": 2673,
       "cursor": {
-        "x": 437,
-        "y": 553,
-        "timestamp": 7222
+        "x": 438,
+        "y": 473,
+        "timestamp": 2673
       },
       "screenshotRef": "screenshots/0009.jpg",
-      "target": "[data-testid=\"demo-wizard-next\"]"
+      "target": "[data-testid=\"demo-wizard-next\"]",
+      "narrationShort": "Wizard step 3 of 3.",
+      "narrationLong": "Clicking Next advances the wizard from step 3 to the following step."
     },
     {
       "id": "click-10",
       "type": "click",
-      "timestamp": 7478,
+      "timestamp": 2847,
       "cursor": {
-        "x": 758,
-        "y": 28,
-        "timestamp": 7478
+        "x": 755,
+        "y": 30,
+        "timestamp": 2847
       },
       "screenshotRef": "screenshots/0010.jpg",
-      "target": "[data-testid=\"nav-kitchen-sink\"]"
+      "target": "[data-testid=\"nav-kitchen-sink\"]",
+      "narrationShort": "Opening the Kitchen Sink page.",
+      "narrationLong": "Switching to the Kitchen Sink page, a stress-test fixture covering text input, a long wait, a select, and a dialog."
     },
     {
       "id": "click-11",
       "type": "click",
-      "timestamp": 7626,
+      "timestamp": 3009,
       "cursor": {
-        "x": 632,
-        "y": 490,
-        "timestamp": 7626
+        "x": 640,
+        "y": 494,
+        "timestamp": 3009
       },
       "screenshotRef": "screenshots/0011.jpg",
-      "target": "[data-testid=\"kitchen-sink-text-input\"]"
+      "target": "[data-testid=\"kitchen-sink-text-input\"]",
+      "narrationShort": "Typing a name into the text field.",
+      "narrationLong": "Clicking the text input and filling it with a name, set in one step rather than keystroke by keystroke."
     },
     {
       "id": "click-12",
       "type": "click",
-      "timestamp": 11175,
+      "timestamp": 3177,
       "cursor": {
-        "x": 632,
-        "y": 692,
-        "timestamp": 11175
+        "x": 640,
+        "y": 697,
+        "timestamp": 3177
       },
       "screenshotRef": "screenshots/0012.jpg",
-      "target": "[data-testid=\"kitchen-sink-textarea\"]"
+      "target": "[data-testid=\"kitchen-sink-textarea\"]",
+      "narrationShort": "Adding some notes.",
+      "narrationLong": "Filling in the textarea with a short note about this capture run."
     },
     {
-      "id": "click-13",
-      "type": "click",
-      "timestamp": 11584,
+      "id": "scroll-18",
+      "type": "scroll",
+      "timestamp": 4146,
       "cursor": {
-        "x": 437,
-        "y": 395,
-        "timestamp": 11584
-      },
-      "screenshotRef": "screenshots/0013.jpg",
-      "target": "[data-testid=\"kitchen-sink-select\"]"
-    },
-    {
-      "id": "click-14",
-      "type": "click",
-      "timestamp": 11737,
-      "cursor": {
-        "x": 437,
-        "y": 495,
-        "timestamp": 11737
-      },
-      "screenshotRef": "screenshots/0014.jpg",
-      "target": "[data-testid=\"kitchen-sink-select-option-beta\"]"
-    },
-    {
-      "id": "click-15",
-      "type": "click",
-      "timestamp": 12171,
-      "cursor": {
-        "x": 387,
-        "y": 378,
-        "timestamp": 12171
-      },
-      "screenshotRef": "screenshots/0015.jpg",
-      "target": "[data-testid=\"kitchen-sink-async-trigger\"]"
-    },
-    {
-      "id": "circle-16",
-      "type": "circle",
-      "timestamp": 52148,
-      "cursor": {
-        "x": 632,
-        "y": 370,
-        "timestamp": 52148
-      },
-      "screenshotRef": "screenshots/0016.jpg",
-      "target": "[data-testid=\"kitchen-sink-async-result\"]",
-      "radius": 30,
-      "duration": 1000
-    },
-    {
-      "id": "click-17",
-      "type": "click",
-      "timestamp": 52487,
-      "cursor": {
-        "x": 381,
-        "y": 718,
-        "timestamp": 52487
-      },
-      "screenshotRef": "screenshots/0017.jpg",
-      "target": "[data-testid=\"kitchen-sink-dialog-trigger\"]"
-    },
-    {
-      "id": "click-18",
-      "type": "click",
-      "timestamp": 52727,
-      "cursor": {
-        "x": 779,
-        "y": 488,
-        "timestamp": 52727
+        "x": 445,
+        "y": 401,
+        "timestamp": 4146
       },
       "screenshotRef": "screenshots/0018.jpg",
-      "target": "[data-testid=\"kitchen-sink-dialog-close\"]"
+      "scrollY": 700,
+      "frames": [
+        "screenshots/0013.jpg",
+        "screenshots/0014.jpg",
+        "screenshots/0015.jpg",
+        "screenshots/0016.jpg",
+        "screenshots/0017.jpg",
+        "screenshots/0018.jpg"
+      ],
+      "narrationShort": "Scrolling down to the dropdown.",
+      "narrationLong": "Scrolling further down the page brings the select field into view."
     },
     {
-      "id": "circle-19",
-      "type": "circle",
-      "timestamp": 53011,
+      "id": "click-19",
+      "type": "click",
+      "timestamp": 4465,
       "cursor": {
-        "x": 632,
-        "y": 790,
-        "timestamp": 53011
+        "x": 445,
+        "y": 401,
+        "timestamp": 4465
       },
       "screenshotRef": "screenshots/0019.jpg",
+      "target": "[data-testid=\"kitchen-sink-select\"]",
+      "narrationShort": "Opening the dropdown.",
+      "narrationLong": "Clicking the select field opens its dropdown panel of options."
+    },
+    {
+      "id": "click-20",
+      "type": "click",
+      "timestamp": 4728,
+      "cursor": {
+        "x": 445,
+        "y": 501,
+        "timestamp": 4728
+      },
+      "screenshotRef": "screenshots/0020.jpg",
+      "target": "[data-testid=\"kitchen-sink-select-option-beta\"]",
+      "narrationShort": "Picking the Beta option.",
+      "narrationLong": "Selecting Beta from the dropdown list closes the panel and updates the field."
+    },
+    {
+      "id": "scroll-26",
+      "type": "scroll",
+      "timestamp": 5736,
+      "cursor": {
+        "x": 396,
+        "y": 376,
+        "timestamp": 5736
+      },
+      "screenshotRef": "screenshots/0026.jpg",
+      "scrollY": 1194,
+      "frames": [
+        "screenshots/0021.jpg",
+        "screenshots/0022.jpg",
+        "screenshots/0023.jpg",
+        "screenshots/0024.jpg",
+        "screenshots/0025.jpg",
+        "screenshots/0026.jpg"
+      ],
+      "frameDurationMs": 750,
+      "narrationShort": "Scrolling down to the long action.",
+      "narrationLong": "Scrolling further down the page brings the long async action into view."
+    },
+    {
+      "id": "click-27",
+      "type": "click",
+      "timestamp": 5897,
+      "cursor": {
+        "x": 396,
+        "y": 376,
+        "timestamp": 5897
+      },
+      "screenshotRef": "screenshots/0027.jpg",
+      "target": "[data-testid=\"kitchen-sink-async-trigger\"]",
+      "narrationShort": "Starting the long action.",
+      "narrationLong": "This simulates a real network request that can take many seconds to finish, while a progress bar and spinner show that it is working."
+    },
+    {
+      "id": "circle-28",
+      "type": "circle",
+      "timestamp": 45972,
+      "cursor": {
+        "x": 640,
+        "y": 413,
+        "timestamp": 45972
+      },
+      "screenshotRef": "screenshots/0028.jpg",
+      "target": "[data-testid=\"kitchen-sink-async-result\"]",
+      "radius": 30,
+      "duration": 1000,
+      "narrationShort": "Done — the action completed.",
+      "narrationLong": "The long-running action has finished and the result is now shown."
+    },
+    {
+      "id": "scroll-29",
+      "type": "scroll",
+      "timestamp": 46273,
+      "cursor": {
+        "x": 389,
+        "y": 717,
+        "timestamp": 46273
+      },
+      "screenshotRef": "screenshots/0029.jpg",
+      "scrollY": 1239,
+      "narrationShort": "Scrolling down to the dialog trigger.",
+      "narrationLong": "Scrolling further down the page brings the dialog trigger button into view."
+    },
+    {
+      "id": "click-30",
+      "type": "click",
+      "timestamp": 46579,
+      "cursor": {
+        "x": 389,
+        "y": 717,
+        "timestamp": 46579
+      },
+      "screenshotRef": "screenshots/0030.jpg",
+      "target": "[data-testid=\"kitchen-sink-dialog-trigger\"]",
+      "narrationShort": "Opening the dialog.",
+      "narrationLong": "Clicking the dialog trigger opens a modal dialog on top of the page."
+    },
+    {
+      "id": "click-31",
+      "type": "click",
+      "timestamp": 46853,
+      "cursor": {
+        "x": 787,
+        "y": 488,
+        "timestamp": 46853
+      },
+      "screenshotRef": "screenshots/0031.jpg",
+      "target": "[data-testid=\"kitchen-sink-dialog-close\"]",
+      "narrationShort": "Closing the dialog.",
+      "narrationLong": "Clicking Close dismisses the dialog and returns to the page underneath."
+    },
+    {
+      "id": "scroll-32",
+      "type": "scroll",
+      "timestamp": 47147,
+      "cursor": {
+        "x": 640,
+        "y": 790,
+        "timestamp": 47147
+      },
+      "screenshotRef": "screenshots/0032.jpg",
+      "scrollY": 1239,
+      "narrationShort": "Scrolling to the bottom of the page.",
+      "narrationLong": "Scrolling all the way down brings the bottom marker into view."
+    },
+    {
+      "id": "circle-33",
+      "type": "circle",
+      "timestamp": 47285,
+      "cursor": {
+        "x": 640,
+        "y": 790,
+        "timestamp": 47285
+      },
+      "screenshotRef": "screenshots/0033.jpg",
       "target": "[data-testid=\"kitchen-sink-end\"]",
       "radius": 24,
-      "duration": 900
+      "duration": 900,
+      "narrationShort": "And that is the whole page.",
+      "narrationLong": "Reaching the bottom marker confirms the page can be traversed end to end."
     }
   ]
 }
