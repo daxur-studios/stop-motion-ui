@@ -147,6 +147,7 @@ type ScrollPhase = {
 // full-screen frame-swapping, not a region-cropped composite over a held
 // base frame (that version's removed; see the ADR for why). Mirrors
 // replay/player.js's identical 'asyncWait' phase kind.
+type SpeedupBadge = { label: string; corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' };
 type AsyncWaitPhase = {
   kind: 'asyncWait';
   t0: number;
@@ -155,6 +156,9 @@ type AsyncWaitPhase = {
   y: number;
   screenshot: string;
   frames: string[];
+  // Set when real time-compression was applied and the badge isn't
+  // suppressed — see buildTimeline()'s 'asyncWait' branch and ADR-011.
+  speedup: SpeedupBadge | null;
   narration?: HTMLAudioElement | null;
 };
 type Phase = ShowPhase | MovePhase | CirclePhase | ScrollPhase | AsyncWaitPhase;
@@ -164,6 +168,7 @@ type Sample = {
   y: number;
   screenshot: string;
   orbit: { center: { x: number; y: number }; radius: number; frac: number } | null;
+  speedup?: SpeedupBadge | null;
 };
 
 interface Timeline {
@@ -460,6 +465,12 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
         // phase rather than true dead air — harmless given from === to, but
         // wasted regardless).
         const t1 = prev.t + ev.frameDurationMs;
+        // "Sped up" badge — only when real compression actually happened.
+        // After CaptureSession.addAsyncWait()'s clamp, frameDurationMs can
+        // never exceed realDurationMs, so a strict `>` here is exactly "was
+        // anything actually compressed." Defaults to shown — see ADR-011.
+        const isCompressed = ev.realDurationMs > ev.frameDurationMs;
+        const showSpeedup = isCompressed && ev.speedupIndicator !== false;
         asyncWaitPhaseRef = {
           kind: 'asyncWait',
           t0: prev.t,
@@ -468,6 +479,9 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
           y: ev.cursor.y,
           screenshot: ev.screenshotRef,
           frames: ev.frames,
+          speedup: showSpeedup
+            ? { label: `${Math.round(ev.realDurationMs / ev.frameDurationMs)}x`, corner: ev.speedupIndicatorCorner ?? 'top-right' }
+            : null,
         };
         phases.push(asyncWaitPhaseRef);
         visualDuration += ev.frameDurationMs;
@@ -715,6 +729,7 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
         y: phase.y,
         screenshot: index >= 0 ? phase.frames[index] : phase.screenshot,
         orbit: null,
+        speedup: phase.speedup,
       };
     }
 
@@ -1026,9 +1041,68 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
 
     this.drawRipples(this.timeline.phases, currentTime);
     this.drawCursor(sample.x, sample.y, sample);
+    this.drawSpeedupBadge(sample.speedup ?? null);
 
     const total = this.timeline.totalDuration;
     this.timeLabel.set((currentTime / 1000).toFixed(1) + 's / ' + (total / 1000).toFixed(1) + 's');
+  }
+
+  // Margin from the canvas edge for the sped-up badge, and its height —
+  // kept as constants so drawSpeedupBadge()'s corner math stays consistent.
+  private static readonly SPEEDUP_BADGE_MARGIN = 10;
+  private static readonly SPEEDUP_BADGE_H = 22;
+
+  /**
+   * Draws a small pill badge (e.g. "14x") in one corner, shown only during
+   * an asyncWait phase where real time-compression was applied — see
+   * buildTimeline()'s 'asyncWait' branch for how `speedup` is computed, and
+   * ADR-011 for why this defaults to shown rather than opt-in. Mirrors
+   * replay/player.js's identical drawSpeedupBadge().
+   */
+  private drawSpeedupBadge(speedup: SpeedupBadge | null): void {
+    if (!speedup) return;
+    const ctx = this.ctx;
+    const canvas = this.stageRef.nativeElement;
+    ctx.save();
+    ctx.font = '600 13px system-ui, sans-serif';
+    const textW = ctx.measureText(speedup.label).width;
+    const padX = 8;
+    const w = textW + padX * 2 + 14; // +14 for the fast-forward glyph
+    const h = ReplayPlayerComponent.SPEEDUP_BADGE_H;
+    const m = ReplayPlayerComponent.SPEEDUP_BADGE_MARGIN;
+    let x: number, y: number;
+    switch (speedup.corner) {
+      case 'top-left': x = m; y = m; break;
+      case 'bottom-left': x = m; y = canvas.height - m - h; break;
+      case 'bottom-right': x = canvas.width - m - w; y = canvas.height - m - h; break;
+      default: x = canvas.width - m - w; y = m; break; // 'top-right'
+    }
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x, y, w, h, h / 2);
+    } else {
+      ctx.rect(x, y, w, h);
+    }
+    ctx.fill();
+
+    // Tiny fast-forward glyph: two right-pointing triangles.
+    const fy = y + h / 2;
+    ctx.fillStyle = '#fff';
+    for (const dx of [0, 6]) {
+      ctx.beginPath();
+      ctx.moveTo(x + 8 + dx, fy - 5);
+      ctx.lineTo(x + 8 + dx, fy + 5);
+      ctx.lineTo(x + 13 + dx, fy);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#fff';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(speedup.label, x + 14 + 8 + padX - 8, fy + 1);
+    ctx.restore();
   }
 
   // ---------- playback loop ----------

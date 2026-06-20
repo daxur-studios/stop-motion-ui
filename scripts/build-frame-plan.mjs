@@ -196,6 +196,16 @@ function buildTimeline(manifest, getNarration) {
       prevManifestEnd = ev.timestamp + ev.duration;
     } else if (ev.type === 'asyncWait') {
       const t1 = prev.t + ev.frameDurationMs;
+      // "Sped up" badge — only when real compression actually happened
+      // (realDurationMs > frameDurationMs; after CaptureSession.addAsyncWait()'s
+      // clamp, frameDurationMs can never exceed realDurationMs, so a strict
+      // `>` here is exactly "was anything actually compressed"). Defaults to
+      // shown — see ADR-011 for why on-by-default was chosen over opt-in.
+      // Mirrors the identical computation in replay/player.js and
+      // replay-player.component.ts's buildTimeline() — see this file's
+      // header comment about keeping the three copies in sync.
+      const isCompressed = ev.realDurationMs > ev.frameDurationMs;
+      const showSpeedup = isCompressed && ev.speedupIndicator !== false;
       asyncWaitPhaseRef = {
         kind: 'asyncWait',
         t0: prev.t,
@@ -204,6 +214,9 @@ function buildTimeline(manifest, getNarration) {
         y: ev.cursor.y,
         screenshot: ev.screenshotRef,
         frames: ev.frames,
+        speedup: showSpeedup
+          ? { label: Math.round(ev.realDurationMs / ev.frameDurationMs) + 'x', corner: ev.speedupIndicatorCorner || 'top-right' }
+          : null,
       };
       phases.push(asyncWaitPhaseRef);
       visualDuration += ev.frameDurationMs;
@@ -258,13 +271,13 @@ function sampleAt(phases, t) {
   const frac = clamp((t - phase.t0) / span, 0, 1);
 
   if (phase.kind === 'show') {
-    return { x: phase.x, y: phase.y, screenshot: phase.screenshot, orbit: null };
+    return { x: phase.x, y: phase.y, screenshot: phase.screenshot, orbit: null, speedup: null };
   }
   if (phase.kind === 'move') {
     const eased = easeInOutCubic(frac);
     const control = controlPointFor(phase.from, phase.to, phase.t0, phase.jitter);
     const pos = quadBezier(phase.from, control, phase.to, eased);
-    return { x: pos.x, y: pos.y, screenshot: phase.screenshot, orbit: null };
+    return { x: pos.x, y: pos.y, screenshot: phase.screenshot, orbit: null, speedup: null };
   }
   if (phase.kind === 'circle') {
     const eased = easeInOutCubic(frac);
@@ -273,7 +286,7 @@ function sampleAt(phases, t) {
     const radius = phase.radius * wobble.radiusMul;
     const x = phase.center.x + Math.cos(angle) * radius;
     const y = phase.center.y + Math.sin(angle) * radius;
-    return { x, y, screenshot: phase.screenshot, orbit: { center: phase.center, radius: phase.radius, frac } };
+    return { x, y, screenshot: phase.screenshot, orbit: { center: phase.center, radius: phase.radius, frac }, speedup: null };
   }
   if (phase.kind === 'asyncWait') {
     // Full-screen frame-cycling (ADR-010) — no region/base compositing.
@@ -283,9 +296,10 @@ function sampleAt(phases, t) {
       y: phase.y,
       screenshot: frameIndex >= 0 ? phase.frames[frameIndex] : phase.screenshot,
       orbit: null,
+      speedup: phase.speedup || null,
     };
   }
-  return { x: 0, y: 0, screenshot: phase.screenshot, orbit: null };
+  return { x: 0, y: 0, screenshot: phase.screenshot, orbit: null, speedup: null };
 }
 
 /** Ported from drawRipples() — same arrival/age math, returns data instead of stroking a canvas. */
@@ -365,6 +379,7 @@ async function main() {
       screenshot: sample.screenshot,
       cursor: { x: sample.x, y: sample.y },
       orbit: sample.orbit,
+      speedup: sample.speedup,
       ripples,
     });
   }

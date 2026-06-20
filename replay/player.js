@@ -656,6 +656,57 @@
     }
   }
 
+  // Margin from the canvas edge for the sped-up badge, and its rough size —
+  // kept as constants so drawSpeedupBadge() and the corner math agree.
+  const SPEEDUP_BADGE_MARGIN = 10;
+  const SPEEDUP_BADGE_H = 22;
+
+  /**
+   * Draws a small pill badge (e.g. "14x") in one corner, shown only during
+   * an asyncWait phase where real time-compression was applied — see
+   * buildTimeline()'s asyncWait branch for how `speedup` is computed, and
+   * ADR-011 for why this defaults to shown rather than opt-in.
+   */
+  function drawSpeedupBadge(speedup) {
+    if (!speedup) return;
+    ctx.save();
+    ctx.font = '600 13px system-ui, sans-serif';
+    const textW = ctx.measureText(speedup.label).width;
+    const padX = 8;
+    const w = textW + padX * 2 + 14; // +14 for the fast-forward glyph
+    const h = SPEEDUP_BADGE_H;
+    const m = SPEEDUP_BADGE_MARGIN;
+    let x, y;
+    switch (speedup.corner) {
+      case 'top-left': x = m; y = m; break;
+      case 'bottom-left': x = m; y = canvas.height - m - h; break;
+      case 'bottom-right': x = canvas.width - m - w; y = canvas.height - m - h; break;
+      default: x = canvas.width - m - w; y = m; break; // 'top-right'
+    }
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x, y, w, h, h / 2) : ctx.rect(x, y, w, h);
+    ctx.fill();
+
+    // Tiny fast-forward glyph: two right-pointing triangles.
+    const fy = y + h / 2;
+    ctx.fillStyle = '#fff';
+    for (const dx of [0, 6]) {
+      ctx.beginPath();
+      ctx.moveTo(x + 8 + dx, fy - 5);
+      ctx.lineTo(x + 8 + dx, fy + 5);
+      ctx.lineTo(x + 13 + dx, fy);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#fff';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(speedup.label, x + 14 + 8 + padX - 8, fy + 1);
+    ctx.restore();
+  }
+
   function render() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -670,6 +721,7 @@
 
     drawRipples(timeline.phases, currentTime);
     drawCursor(sample.x, sample.y, sample);
+    drawSpeedupBadge(sample.speedup);
 
     const total = timeline.totalDuration;
     timeLabel.textContent = (currentTime / 1000).toFixed(1) + 's / ' + (total / 1000).toFixed(1) + 's';

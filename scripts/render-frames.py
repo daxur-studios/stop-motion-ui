@@ -22,7 +22,27 @@ import math
 import os
 import sys
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
+
+SPEEDUP_BADGE_MARGIN = 10
+SPEEDUP_BADGE_H = 22
+_SPEEDUP_FONT = None
+
+
+def _speedup_font():
+    # Lazily loaded, cached at module scope — same idea as load_cached()'s
+    # per-screenshot cache, just for the one font object every badge reuses.
+    # No bundled font file in this repo, so fall back to PIL's built-in
+    # bitmap default if a real TrueType font isn't available in this
+    # sandbox; either way the badge still renders, just with a coarser font
+    # in the fallback case.
+    global _SPEEDUP_FONT
+    if _SPEEDUP_FONT is None:
+        try:
+            _SPEEDUP_FONT = ImageFont.truetype("DejaVuSans-Bold.ttf", 13)
+        except Exception:
+            _SPEEDUP_FONT = ImageFont.load_default()
+    return _SPEEDUP_FONT
 
 
 def load_cached(cache, base_dir, rel_path):
@@ -74,6 +94,47 @@ def draw_cursor(draw, x, y, orbit):
     draw.polygon(pts, fill=(255, 255, 255, 255), outline=(34, 34, 34, 255))
 
 
+def draw_speedup_badge(draw, canvas_w, canvas_h, speedup):
+    # Mirrors drawSpeedupBadge() in replay/player.js and
+    # replay-player.component.ts (black semi-transparent rounded pill +
+    # two-triangle fast-forward glyph + text label) as closely as PIL's
+    # ImageDraw API allows — see those files' identical implementations and
+    # this repo's discipline of keeping the three buildTimeline()/render
+    # copies in sync (ADR-009's flagged risk).
+    if not speedup:
+        return
+    font = _speedup_font()
+    label = speedup["label"]
+    bbox = draw.textbbox((0, 0), label, font=font)
+    text_w = bbox[2] - bbox[0]
+    pad_x = 8
+    w = text_w + pad_x * 2 + 14
+    h = SPEEDUP_BADGE_H
+    m = SPEEDUP_BADGE_MARGIN
+    corner = speedup.get("corner", "top-right")
+    if corner == "top-left":
+        x, y = m, m
+    elif corner == "bottom-left":
+        x, y = m, canvas_h - m - h
+    elif corner == "bottom-right":
+        x, y = canvas_w - m - w, canvas_h - m - h
+    else:  # 'top-right' default
+        x, y = canvas_w - m - w, m
+
+    draw.rounded_rectangle([x, y, x + w, y + h], radius=h / 2, fill=(0, 0, 0, 153))  # 0.6*255≈153
+
+    fy = y + h / 2
+    # Two-triangle fast-forward glyph, same vertex layout as the canvas version.
+    for dx in (0, 6):
+        draw.polygon(
+            [(x + 8 + dx, fy - 5), (x + 8 + dx, fy + 5), (x + 13 + dx, fy)],
+            fill=(255, 255, 255, 255),
+        )
+
+    text_x = x + 14 + 8 + pad_x - 8
+    draw.text((text_x, fy), label, font=font, fill=(255, 255, 255, 255), anchor="lm")
+
+
 def draw_ripples(draw, ripples):
     for rp in ripples:
         alpha = max(0, min(255, round(rp["alpha"] * 255)))
@@ -109,6 +170,7 @@ def main():
         draw = ImageDraw.Draw(canvas, "RGBA")
         draw_ripples(draw, frame["ripples"])
         draw_cursor(draw, frame["cursor"]["x"], frame["cursor"]["y"], frame["orbit"])
+        draw_speedup_badge(draw, vw, vh, frame.get("speedup"))
 
         out_path = os.path.join(out_dir, f"frame_{i:05d}.png")
         canvas.convert("RGB").save(out_path)

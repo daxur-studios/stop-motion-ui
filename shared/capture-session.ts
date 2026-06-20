@@ -154,7 +154,7 @@ export class CaptureSession {
    * returns the manifest-relative `screenshotRef` (e.g. "screenshots/0001.jpg")
    * ready to pass to addNavigate/addClick/addCircle/addScroll.
    *
-   * `quality` defaults to **80** — the ADR-003 setting used for every
+   * `quality` defaults to 80 — the ADR-003 setting used for every
    * "real" frame (the one a step actually holds on). Pass a lower value for
    * high-volume, low-individual-value frames where this default would be
    * wasteful — the original motivating case is scroll-animation frames

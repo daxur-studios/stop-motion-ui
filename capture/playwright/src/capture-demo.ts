@@ -590,11 +590,22 @@ async function main(): Promise<void> {
     }
     frames.push(await session.saveScreenshot(await page.screenshot()));
 
+    // maxDisplayMs/speedupIndicator/speedupIndicatorCorner are demonstrated
+    // here on purpose: this real ~40s (or ~4s under FAST_ASYNC) wait is
+    // exactly the case those fields exist for. maxDisplayMs is set equal to
+    // ASYNC_WAIT_DISPLAY_MS — same effective result as before this feature
+    // existed (frameDurationMs alone already capped it identically) — so
+    // this call site's behavior is unchanged; the field is included purely
+    // so a real manifest.json produced by this script shows the field in
+    // use. speedupIndicator/speedupIndicatorCorner are left at their
+    // defaults (shown, 'top-right') — see AsyncWaitAction's doc comments in
+    // shared/manifest-types.ts and ADR-011 for the on-by-default reasoning.
     session.addAsyncWait({
       target: '[data-testid="kitchen-sink-async-active"]',
       frames,
       realDurationMs,
       frameDurationMs: ASYNC_WAIT_DISPLAY_MS,
+      maxDisplayMs: ASYNC_WAIT_DISPLAY_MS,
       cursor: asyncTriggerCursor, // cursor doesn't move during the wait; reuse the trigger's position
       screenshotRef: frames[frames.length - 1],
       narrationShort: "Waiting for the action to finish.",

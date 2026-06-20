@@ -122,7 +122,7 @@ export interface CircleAction extends BaseEvent {
  * element (loading spinner/progress bar) — see "asyncWait" in
  * docs/roadmap.md.
  *
- * As of ADR-010, this is **plain full-screen frame sampling**, the same
+ * As of ADR-010, this is plain full-screen frame sampling, the same
  * shape as ScrollAction.frames — not region-cropped/composited. An earlier
  * version of this type (see ADR-010's "what changed" section, and the
  * now-historical write-up in docs/open-questions.md's "Element-region
@@ -178,7 +178,7 @@ export interface AsyncWaitAction extends BaseEvent {
    * value baked in once, at capture time, into `frameDurationMs` itself
    * (`CaptureSession.addAsyncWait()` computes
    * `frameDurationMs = min(realDurationMs, maxDisplayMs ?? frameDurationMs)`
-   * — see that method). Stored here mainly so the manifest documents *why*
+   * — see that method). Stored here mainly so the manifest documents why
    * `frameDurationMs` has the value it has; neither player nor the
    * video-export pipeline read `maxDisplayMs` directly, they only ever
    * consume the already-computed `frameDurationMs`. Omit to fall back to
@@ -191,7 +191,7 @@ export interface AsyncWaitAction extends BaseEvent {
    * phase. Only ever shown when real time-compression was actually applied
    * (`realDurationMs > frameDurationMs`) — if the real wait was already
    * shorter than the display duration, there's nothing to disclose, so the
-   * badge never renders regardless of this flag. Defaults to **true** when
+   * badge never renders regardless of this flag. Defaults to true when
    * compression is applied and this field is omitted — see ADR-011 for why
    * on-by-default was chosen over opt-in. Set to `false` to suppress it for
    * a specific action.
