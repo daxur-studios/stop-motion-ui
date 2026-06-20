@@ -137,6 +137,24 @@
     return { radiusMul, angleOffset };
   }
 
+  /**
+   * Point on the circle-gesture orbit at progress `frac` (0 = where the
+   * gesture starts, 1 = where it ends) — same formula as sampleAt()'s
+   * 'circle' branch, minus the jitter wobble. Safe to drop the wobble term
+   * here because circleWobble()'s envelope (sin(frac * PI)) is exactly 0 at
+   * frac=0 and frac=1, the only two fracs this helper is ever called with —
+   * used to anchor the move phases immediately before/after a circle
+   * gesture to the orbit's actual edge, not the literal center. The circle
+   * never visits its own center (radius is constant, only the angle
+   * sweeps), so a move phase that glides to/from the center would always
+   * end in a `radius`-sized snap the instant the circle phase starts/ends.
+   * See buildTimeline()'s 'circle' handling.
+   */
+  function circleOrbitPoint(center, radius, frac) {
+    const angle = -Math.PI / 2 + easeInOutCubic(frac) * Math.PI * 2 * CIRCLE_LOOPS;
+    return { x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius };
+  }
+
   // ---------- timeline construction ----------
 
   /**
@@ -223,13 +241,25 @@
       // Glide from wherever we ended up to this event's cursor point, while
       // showing whatever screenshot was current *before* this event landed.
       const moveDur = ev.timestamp - prevManifestEnd;
+      // For a 'circle' event, the cursor doesn't actually rest at the
+      // literal center once the gesture starts — sampleAt()'s 'circle'
+      // branch always renders it offset by the full radius (the orbit's
+      // angle sweeps, but the radius itself is constant; the wobble that
+      // could shrink it toward 0 is itself eased to exactly 0 right at the
+      // gesture's start). So gliding this move phase to the center, like
+      // every other move target, would end in an instant `radius`-sized
+      // snap the moment the circle phase takes over. Glide to the orbit's
+      // actual starting point instead — see circleOrbitPoint().
+      const moveTarget = ev.type === 'circle'
+        ? circleOrbitPoint({ x: ev.cursor.x, y: ev.cursor.y }, ev.radius, 0)
+        : { x: ev.cursor.x, y: ev.cursor.y };
       if (moveDur > 0) {
         movePhaseRef = {
           kind: 'move',
           t0: prev.t,
           t1: prev.t + moveDur,
           from: { x: prev.x, y: prev.y },
-          to: { x: ev.cursor.x, y: ev.cursor.y },
+          to: moveTarget,
           screenshot: prev.screenshot,
           jitter: moveJitter(),
         };
@@ -252,7 +282,12 @@
         };
         phases.push(circlePhaseRef);
         visualDuration += ev.duration;
-        prev = { x: ev.cursor.x, y: ev.cursor.y, t: t1, screenshot: ev.screenshotRef };
+        // Likewise, the gesture's *exit* point is wherever the orbit
+        // actually ends (frac=1), not the center — the next move phase's
+        // 'from' needs to match that so there's no snap on the way out
+        // either.
+        const exitPoint = circleOrbitPoint({ x: ev.cursor.x, y: ev.cursor.y }, ev.radius, 1);
+        prev = { x: exitPoint.x, y: exitPoint.y, t: t1, screenshot: ev.screenshotRef };
         prevManifestEnd = ev.timestamp + ev.duration;
       } else {
         prev = { x: ev.cursor.x, y: ev.cursor.y, t: prev.t, screenshot: ev.screenshotRef };
@@ -517,8 +552,17 @@
   function drawRipples(phases, t) {
     // A ripple fires for any non-circle, non-initial-show phase boundary
     // we've just crossed (i.e. an arrival), to visually punctuate clicks.
-    for (const phase of phases) {
+    // Exception: a move phase whose very next phase is a 'circle' isn't an
+    // arrival at a click target — it's the glide *into* a circle gesture
+    // (see buildTimeline()'s 'circle' handling, which now targets the
+    // orbit's edge, not the center, for exactly this kind of continuity). A
+    // circle is "look here," not "click here," so it shouldn't get a
+    // click-feedback ripple at its start — that was a leftover from before
+    // 'move' phases were ever used to approach anything but a real click.
+    for (let i = 0; i < phases.length; i++) {
+      const phase = phases[i];
       if (phase.kind !== 'move') continue;
+      if (phases[i + 1] && phases[i + 1].kind === 'circle') continue;
       const arrivalT = phase.t1;
       const age = t - arrivalT;
       if (age >= 0 && age <= RIPPLE_MS) {
