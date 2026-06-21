@@ -52,3 +52,54 @@
     <option value="long">Narration: long</option>
   </select>
 </div>
+
+<div id="dev-tools">
+  <span class="dev-tools-label">Dev tools</span>
+
+  <button
+    class="dev-btn"
+    [disabled]="captureStatus() === 'running'"
+    (click)="runCapture()"
+    title="Run Playwright capture for the selected scenario (needs Angular app running)"
+  >
+    @if (captureStatus() === 'running') { Capturing… }
+    @else if (captureStatus() === 'done') { Capture done ✓ }
+    @else if (captureStatus() === 'error') { Capture failed ✗ }
+    @else { Capture }
+  </button>
+
+  <label class="dev-checkbox" title="Open a visible browser window during capture">
+    <input type="checkbox" [checked]="captureHeaded()" (change)="captureHeaded.set($any($event.target).checked)" />
+    headed
+  </label>
+
+  <span class="dev-tools-sep"></span>
+
+  <button
+    class="dev-btn"
+    [disabled]="ttsStatus() === 'running'"
+    (click)="generateNarration()"
+    title="Run generate-narration.mjs for the selected scenario (needs dev-server running)"
+  >
+    @if (ttsStatus() === 'running') { Generating TTS… }
+    @else if (ttsStatus() === 'done') { TTS done ✓ }
+    @else if (ttsStatus() === 'error') { TTS failed ✗ }
+    @else { Generate TTS }
+  </button>
+
+  <button
+    class="dev-btn"
+    [disabled]="videoStatus() === 'running'"
+    (click)="exportVideo()"
+    title="Run export-video.mjs for the selected scenario (needs dev-server + ffmpeg + Pillow)"
+  >
+    @if (videoStatus() === 'running') { Exporting video… }
+    @else if (videoStatus() === 'done') { Video done ✓ }
+    @else if (videoStatus() === 'error') { Video failed ✗ }
+    @else { Export Video }
+  </button>
+
+  <span class="dev-tools-hint">
+    Requires <code>node scripts/dev-server.mjs</code> running in a separate terminal.
+  </span>
+</div>

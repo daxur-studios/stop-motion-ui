@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "capturedAt": "2026-06-20T15:20:03.946Z",
+  "capturedAt": "2026-06-20T23:22:18.872Z",
   "backend": "playwright",
   "viewport": {
     "width": 1280,
@@ -11,181 +11,205 @@
     {
       "id": "nav-1",
       "type": "navigate",
-      "timestamp": 1707,
+      "timestamp": 2039,
       "cursor": {
         "x": 0,
         "y": 0,
-        "timestamp": 1707
+        "timestamp": 2039
       },
       "screenshotRef": "screenshots/0001.jpg",
-      "url": "http://localhost:4221/?fastAsync=1",
+      "url": "http://localhost:4221/",
       "narrationShort": "Starting on the Replay Player view.",
-      "narrationLong": "This is the Replay Player view, where a previously captured manifest plays back."
+      "narrationLong": "This is the Replay Player view, where a previously captured manifest plays back.",
+      "narrationAudioShort": "narration/nav-1-short.ogg",
+      "narrationAudioLong": "narration/nav-1-long.ogg"
     },
     {
       "id": "click-2",
       "type": "click",
-      "timestamp": 1881,
+      "timestamp": 2260,
       "cursor": {
         "x": 635,
         "y": 29,
-        "timestamp": 1881
+        "timestamp": 2260
       },
       "screenshotRef": "screenshots/0002.jpg",
       "target": "[data-testid=\"nav-demos\"]",
       "narrationShort": "Switching to the Demo Gallery.",
-      "narrationLong": "Clicking the Demo Gallery tab navigates to a page with several small example widgets."
+      "narrationLong": "Clicking the Demo Gallery tab navigates to a page with several small example widgets.",
+      "narrationAudioShort": "narration/click-2-short.ogg",
+      "narrationAudioLong": "narration/click-2-long.ogg"
     },
     {
       "id": "click-3",
       "type": "click",
-      "timestamp": 2002,
+      "timestamp": 2405,
       "cursor": {
         "x": 410,
         "y": 156,
-        "timestamp": 2002
+        "timestamp": 2405
       },
       "screenshotRef": "screenshots/0003.jpg",
       "target": "[data-testid=\"demo-counter-increment\"]",
       "narrationShort": "Incrementing the counter.",
-      "narrationLong": "Clicking the increment button increases the counter value by one."
+      "narrationLong": "Clicking the increment button increases the counter value by one.",
+      "narrationAudioShort": "narration/click-3-short.ogg",
+      "narrationAudioLong": "narration/click-3-long.ogg"
     },
     {
       "id": "click-4",
       "type": "click",
-      "timestamp": 2133,
+      "timestamp": 2530,
       "cursor": {
         "x": 410,
         "y": 156,
-        "timestamp": 2133
+        "timestamp": 2530
       },
       "screenshotRef": "screenshots/0004.jpg",
       "target": "[data-testid=\"demo-counter-increment\"]",
       "narrationShort": "Incrementing the counter.",
-      "narrationLong": "Clicking the increment button increases the counter value by one."
+      "narrationLong": "Clicking the increment button increases the counter value by one.",
+      "narrationAudioShort": "narration/click-4-short.ogg",
+      "narrationAudioLong": "narration/click-4-long.ogg"
     },
     {
       "id": "circle-5",
       "type": "circle",
-      "timestamp": 2243,
+      "timestamp": 2649,
       "cursor": {
         "x": 640,
         "y": 111,
-        "timestamp": 2243
+        "timestamp": 2649
       },
       "screenshotRef": "screenshots/0005.jpg",
       "target": "[data-testid=\"demo-counter-value\"]",
       "radius": 40,
       "duration": 1200,
       "narrationShort": "Here is the updated count.",
-      "narrationLong": "Circling the counter value draws attention to the result after both increments."
+      "narrationLong": "Circling the counter value draws attention to the result after both increments.",
+      "narrationAudioShort": "narration/circle-5-short.ogg",
+      "narrationAudioLong": "narration/circle-5-long.ogg"
     },
     {
       "id": "click-6",
       "type": "click",
-      "timestamp": 2903,
+      "timestamp": 3315,
       "cursor": {
         "x": 374,
         "y": 384,
-        "timestamp": 2903
+        "timestamp": 3315
       },
       "screenshotRef": "screenshots/0006.jpg",
       "target": "[data-testid=\"demo-form-submit\"]",
       "narrationShort": "Submitting the form.",
-      "narrationLong": "After filling in a name and email, submitting the form waits out a simulated network delay before confirming."
+      "narrationLong": "After filling in a name and email, submitting the form waits out a simulated network delay before confirming.",
+      "narrationAudioShort": "narration/click-6-short.ogg",
+      "narrationAudioLong": "narration/click-6-long.ogg"
     },
     {
       "id": "click-7",
       "type": "click",
-      "timestamp": 3024,
+      "timestamp": 3456,
       "cursor": {
         "x": 433,
         "y": 469,
-        "timestamp": 3024
+        "timestamp": 3456
       },
       "screenshotRef": "screenshots/0007.jpg",
       "target": "[data-testid=\"demo-wizard-next\"]",
       "narrationShort": "Wizard step 1 of 3.",
-      "narrationLong": "Clicking Next advances the wizard from step 1 to the following step."
+      "narrationLong": "Clicking Next advances the wizard from step 1 to the following step.",
+      "narrationAudioShort": "narration/click-7-short.ogg",
+      "narrationAudioLong": "narration/click-7-long.ogg"
     },
     {
       "id": "click-8",
       "type": "click",
-      "timestamp": 3134,
+      "timestamp": 3579,
       "cursor": {
         "x": 433,
         "y": 469,
-        "timestamp": 3134
+        "timestamp": 3579
       },
       "screenshotRef": "screenshots/0008.jpg",
       "target": "[data-testid=\"demo-wizard-next\"]",
       "narrationShort": "Wizard step 2 of 3.",
-      "narrationLong": "Clicking Next advances the wizard from step 2 to the following step."
+      "narrationLong": "Clicking Next advances the wizard from step 2 to the following step.",
+      "narrationAudioShort": "narration/click-8-short.ogg",
+      "narrationAudioLong": "narration/click-8-long.ogg"
     },
     {
       "id": "click-9",
       "type": "click",
-      "timestamp": 3243,
+      "timestamp": 3708,
       "cursor": {
         "x": 437,
         "y": 469,
-        "timestamp": 3243
+        "timestamp": 3708
       },
       "screenshotRef": "screenshots/0009.jpg",
       "target": "[data-testid=\"demo-wizard-next\"]",
       "narrationShort": "Wizard step 3 of 3.",
-      "narrationLong": "Clicking Next advances the wizard from step 3 to the following step."
+      "narrationLong": "Clicking Next advances the wizard from step 3 to the following step.",
+      "narrationAudioShort": "narration/click-9-short.ogg",
+      "narrationAudioLong": "narration/click-9-long.ogg"
     },
     {
       "id": "click-10",
       "type": "click",
-      "timestamp": 3471,
+      "timestamp": 4003,
       "cursor": {
         "x": 754,
         "y": 29,
-        "timestamp": 3471
+        "timestamp": 4003
       },
       "screenshotRef": "screenshots/0010.jpg",
       "target": "[data-testid=\"nav-kitchen-sink\"]",
       "narrationShort": "Opening the Kitchen Sink page.",
-      "narrationLong": "Switching to the Kitchen Sink page, a stress-test fixture covering text input, a long wait, a select, and a dialog."
+      "narrationLong": "Switching to the Kitchen Sink page, a stress-test fixture covering text input, a long wait, a select, and a dialog.",
+      "narrationAudioShort": "narration/click-10-short.ogg",
+      "narrationAudioLong": "narration/click-10-long.ogg"
     },
     {
       "id": "click-11",
       "type": "click",
-      "timestamp": 3628,
+      "timestamp": 4203,
       "cursor": {
         "x": 632,
         "y": 492,
-        "timestamp": 3628
+        "timestamp": 4203
       },
       "screenshotRef": "screenshots/0011.jpg",
       "target": "[data-testid=\"kitchen-sink-text-input\"]",
       "narrationShort": "Typing a name into the text field.",
-      "narrationLong": "Clicking the text input and filling it with a name, set in one step rather than keystroke by keystroke."
+      "narrationLong": "Clicking the text input and filling it with a name, set in one step rather than keystroke by keystroke.",
+      "narrationAudioShort": "narration/click-11-short.ogg",
+      "narrationAudioLong": "narration/click-11-long.ogg"
     },
     {
       "id": "click-12",
       "type": "click",
-      "timestamp": 3790,
+      "timestamp": 4395,
       "cursor": {
         "x": 632,
         "y": 694,
-        "timestamp": 3790
+        "timestamp": 4395
       },
       "screenshotRef": "screenshots/0012.jpg",
       "target": "[data-testid=\"kitchen-sink-textarea\"]",
       "narrationShort": "Adding some notes.",
-      "narrationLong": "Filling in the textarea with a short note about this capture run."
+      "narrationLong": "Filling in the textarea with a short note about this capture run.",
+      "narrationAudioShort": "narration/click-12-short.ogg",
+      "narrationAudioLong": "narration/click-12-long.ogg"
     },
     {
       "id": "scroll-18",
       "type": "scroll",
-      "timestamp": 4796,
+      "timestamp": 5465,
       "cursor": {
         "x": 437,
         "y": 397,
-        "timestamp": 4796
+        "timestamp": 5465
       },
       "screenshotRef": "screenshots/0018.jpg",
       "scrollY": 700,
@@ -198,44 +222,50 @@
         "screenshots/0018.jpg"
       ],
       "narrationShort": "Scrolling down to the dropdown.",
-      "narrationLong": "Scrolling further down the page brings the select field into view."
+      "narrationLong": "Scrolling further down the page brings the select field into view.",
+      "narrationAudioShort": "narration/scroll-18-short.ogg",
+      "narrationAudioLong": "narration/scroll-18-long.ogg"
     },
     {
       "id": "click-19",
       "type": "click",
-      "timestamp": 5081,
+      "timestamp": 5764,
       "cursor": {
         "x": 437,
         "y": 397,
-        "timestamp": 5081
+        "timestamp": 5764
       },
       "screenshotRef": "screenshots/0019.jpg",
       "target": "[data-testid=\"kitchen-sink-select\"]",
       "narrationShort": "Opening the dropdown.",
-      "narrationLong": "Clicking the select field opens its dropdown panel of options."
+      "narrationLong": "Clicking the select field opens its dropdown panel of options.",
+      "narrationAudioShort": "narration/click-19-short.ogg",
+      "narrationAudioLong": "narration/click-19-long.ogg"
     },
     {
       "id": "click-20",
       "type": "click",
-      "timestamp": 5323,
+      "timestamp": 6024,
       "cursor": {
         "x": 437,
         "y": 497,
-        "timestamp": 5323
+        "timestamp": 6024
       },
       "screenshotRef": "screenshots/0020.jpg",
       "target": "[data-testid=\"kitchen-sink-select-option-beta\"]",
       "narrationShort": "Picking the Beta option.",
-      "narrationLong": "Selecting Beta from the dropdown list closes the panel and updates the field."
+      "narrationLong": "Selecting Beta from the dropdown list closes the panel and updates the field.",
+      "narrationAudioShort": "narration/click-20-short.ogg",
+      "narrationAudioLong": "narration/click-20-long.ogg"
     },
     {
       "id": "scroll-26",
       "type": "scroll",
-      "timestamp": 6229,
+      "timestamp": 6997,
       "cursor": {
         "x": 387,
         "y": 378,
-        "timestamp": 6229
+        "timestamp": 6997
       },
       "screenshotRef": "screenshots/0026.jpg",
       "scrollY": 1186.6666259765625,
@@ -249,39 +279,37 @@
       ],
       "frameDurationMs": 750,
       "narrationShort": "Scrolling down to the long action.",
-      "narrationLong": "Scrolling further down the page brings the long async action into view."
+      "narrationLong": "Scrolling further down the page brings the long async action into view.",
+      "narrationAudioShort": "narration/scroll-26-short.ogg",
+      "narrationAudioLong": "narration/scroll-26-long.ogg"
     },
     {
       "id": "click-27",
       "type": "click",
-      "timestamp": 6447,
+      "timestamp": 7247,
       "cursor": {
         "x": 387,
         "y": 378,
-        "timestamp": 6447
+        "timestamp": 7247
       },
       "screenshotRef": "screenshots/0027.jpg",
       "target": "[data-testid=\"kitchen-sink-async-trigger\"]",
       "narrationShort": "Starting the long action.",
-      "narrationLong": "This simulates a real network request that can take many seconds to finish, while a progress bar and spinner show that it is working."
+      "narrationLong": "This simulates a real network request that can take many seconds to finish, while a progress bar and spinner show that it is working.",
+      "narrationAudioShort": "narration/click-27-short.ogg",
+      "narrationAudioLong": "narration/click-27-long.ogg"
     },
     {
       "id": "asyncwait-33",
       "type": "asyncWait",
-      "timestamp": 10359,
+      "timestamp": 47743,
       "cursor": {
         "x": 387,
         "y": 378,
-        "timestamp": 10359
+        "timestamp": 47743
       },
-      "screenshotRef": "screenshots/0027.jpg",
+      "screenshotRef": "screenshots/0033.jpg",
       "target": "[data-testid=\"kitchen-sink-async-active\"]",
-      "regionRect": {
-        "x": 331,
-        "y": 405,
-        "width": 603,
-        "height": 102
-      },
       "frames": [
         "screenshots/0028.jpg",
         "screenshots/0029.jpg",
@@ -290,98 +318,113 @@
         "screenshots/0032.jpg",
         "screenshots/0033.jpg"
       ],
-      "realDurationMs": 3850,
+      "realDurationMs": 40122,
       "frameDurationMs": 2500,
+      "maxDisplayMs": 2500,
       "narrationShort": "Waiting for the action to finish.",
-      "narrationLong": "The action runs in the background while a progress bar and spinner show it working, compressed here from its real duration."
+      "narrationLong": "The action runs in the background while a progress bar and spinner show it working, compressed here from its real duration.",
+      "narrationAudioShort": "narration/asyncwait-33-short.ogg",
+      "narrationAudioLong": "narration/asyncwait-33-long.ogg"
     },
     {
       "id": "circle-34",
       "type": "circle",
-      "timestamp": 10484,
+      "timestamp": 47892,
       "cursor": {
         "x": 632,
         "y": 415,
-        "timestamp": 10484
+        "timestamp": 47892
       },
       "screenshotRef": "screenshots/0034.jpg",
       "target": "[data-testid=\"kitchen-sink-async-result\"]",
       "radius": 30,
       "duration": 1000,
       "narrationShort": "Done — the action completed.",
-      "narrationLong": "The long-running action has finished and the result is now shown."
+      "narrationLong": "The long-running action has finished and the result is now shown.",
+      "narrationAudioShort": "narration/circle-34-short.ogg",
+      "narrationAudioLong": "narration/circle-34-long.ogg"
     },
     {
       "id": "scroll-35",
       "type": "scroll",
-      "timestamp": 10765,
+      "timestamp": 48220,
       "cursor": {
         "x": 381,
         "y": 718,
-        "timestamp": 10765
+        "timestamp": 48220
       },
       "screenshotRef": "screenshots/0035.jpg",
       "scrollY": 1232,
       "narrationShort": "Scrolling down to the dialog trigger.",
-      "narrationLong": "Scrolling further down the page brings the dialog trigger button into view."
+      "narrationLong": "Scrolling further down the page brings the dialog trigger button into view.",
+      "narrationAudioShort": "narration/scroll-35-short.ogg",
+      "narrationAudioLong": "narration/scroll-35-long.ogg"
     },
     {
       "id": "click-36",
       "type": "click",
-      "timestamp": 11064,
+      "timestamp": 48555,
       "cursor": {
         "x": 381,
         "y": 718,
-        "timestamp": 11064
+        "timestamp": 48555
       },
       "screenshotRef": "screenshots/0036.jpg",
       "target": "[data-testid=\"kitchen-sink-dialog-trigger\"]",
       "narrationShort": "Opening the dialog.",
-      "narrationLong": "Clicking the dialog trigger opens a modal dialog on top of the page."
+      "narrationLong": "Clicking the dialog trigger opens a modal dialog on top of the page.",
+      "narrationAudioShort": "narration/click-36-short.ogg",
+      "narrationAudioLong": "narration/click-36-long.ogg"
     },
     {
       "id": "click-37",
       "type": "click",
-      "timestamp": 11304,
+      "timestamp": 48815,
       "cursor": {
         "x": 779,
         "y": 488,
-        "timestamp": 11304
+        "timestamp": 48815
       },
       "screenshotRef": "screenshots/0037.jpg",
       "target": "[data-testid=\"kitchen-sink-dialog-close\"]",
       "narrationShort": "Closing the dialog.",
-      "narrationLong": "Clicking Close dismisses the dialog and returns to the page underneath."
+      "narrationLong": "Clicking Close dismisses the dialog and returns to the page underneath.",
+      "narrationAudioShort": "narration/click-37-short.ogg",
+      "narrationAudioLong": "narration/click-37-long.ogg"
     },
     {
       "id": "scroll-38",
       "type": "scroll",
-      "timestamp": 11586,
+      "timestamp": 49119,
       "cursor": {
         "x": 632,
         "y": 790,
-        "timestamp": 11586
+        "timestamp": 49119
       },
       "screenshotRef": "screenshots/0038.jpg",
       "scrollY": 1232,
       "narrationShort": "Scrolling to the bottom of the page.",
-      "narrationLong": "Scrolling all the way down brings the bottom marker into view."
+      "narrationLong": "Scrolling all the way down brings the bottom marker into view.",
+      "narrationAudioShort": "narration/scroll-38-short.ogg",
+      "narrationAudioLong": "narration/scroll-38-long.ogg"
     },
     {
       "id": "circle-39",
       "type": "circle",
-      "timestamp": 11714,
+      "timestamp": 49258,
       "cursor": {
         "x": 632,
         "y": 790,
-        "timestamp": 11714
+        "timestamp": 49258
       },
       "screenshotRef": "screenshots/0039.jpg",
       "target": "[data-testid=\"kitchen-sink-end\"]",
       "radius": 24,
       "duration": 900,
       "narrationShort": "And that is the whole page.",
-      "narrationLong": "Reaching the bottom marker confirms the page can be traversed end to end."
+      "narrationLong": "Reaching the bottom marker confirms the page can be traversed end to end.",
+      "narrationAudioShort": "narration/circle-39-short.ogg",
+      "narrationAudioLong": "narration/circle-39-long.ogg"
     }
   ]
 }

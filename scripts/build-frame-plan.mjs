@@ -327,7 +327,7 @@ async function ffprobeDurationMs(absPath) {
     '-show_entries', 'format=duration',
     '-of', 'csv=p=0',
     absPath,
-  ]);
+  ], { shell: process.platform === 'win32' });
   const seconds = parseFloat(stdout.trim());
   if (!Number.isFinite(seconds)) throw new Error(`ffprobe returned non-numeric duration for ${absPath}`);
   return seconds * 1000;

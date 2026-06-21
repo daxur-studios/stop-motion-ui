@@ -91,3 +91,71 @@ select {
   color: #777;
   min-height: 18px;
 }
+
+#dev-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 900px;
+  margin: 8px auto 24px;
+  padding: 8px 14px;
+  background: #1e2430;
+  border: 1px solid #2e3a50;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.dev-tools-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #556;
+  margin-right: 2px;
+}
+
+.dev-btn {
+  background: #253040;
+  border-color: #3a4a60;
+  font-size: 12px;
+  padding: 5px 12px;
+
+  &:hover:not(:disabled) {
+    background: #2e3d52;
+  }
+}
+
+.dev-tools-sep {
+  width: 1px;
+  height: 20px;
+  background: #2e3a50;
+  margin: 0 2px;
+}
+
+.dev-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #99a;
+  cursor: pointer;
+  user-select: none;
+
+  input[type='checkbox'] {
+    accent-color: #4a7a9b;
+    cursor: pointer;
+  }
+}
+
+.dev-tools-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: #445;
+
+  code {
+    background: #1a1e28;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: #6a8;
+  }
+}

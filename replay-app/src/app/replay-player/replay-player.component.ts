@@ -4,9 +4,11 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
+  inject,
   signal,
 } from '@angular/core';
 import type { Manifest } from '@shared/manifest-types';
+import { ScriptRunnerService } from '../shared/script-runner.service';
 
 // Stop-Motion UI — Replay player, Angular port.
 //
@@ -177,6 +179,8 @@ interface Timeline {
   baseDir: string;
 }
 
+type DevToolStatus = 'idle' | 'running' | 'done' | 'error';
+
 @Component({
   selector: 'app-replay-player',
   standalone: true,
@@ -198,6 +202,40 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   readonly ready = signal(false);
   readonly timeLabel = signal('0.0s / 0.0s');
   readonly narrationMode = signal<'off' | 'short' | 'long'>('off');
+
+  readonly ttsStatus = signal<DevToolStatus>('idle');
+  readonly videoStatus = signal<DevToolStatus>('idle');
+  readonly captureStatus = signal<DevToolStatus>('idle');
+  readonly captureHeaded = signal(false);
+
+  private scripts = inject(ScriptRunnerService);
+
+  generateNarration(): void {
+    if (this.ttsStatus() === 'running') return;
+    this.ttsStatus.set('running');
+    this.scripts.generateNarration(this.scenario()).subscribe({
+      next: (r) => this.ttsStatus.set(r.ok ? 'done' : 'error'),
+      error: () => this.ttsStatus.set('error'),
+    });
+  }
+
+  exportVideo(): void {
+    if (this.videoStatus() === 'running') return;
+    this.videoStatus.set('running');
+    this.scripts.exportVideo(this.scenario(), this.narrationMode()).subscribe({
+      next: (r) => this.videoStatus.set(r.ok ? 'done' : 'error'),
+      error: () => this.videoStatus.set('error'),
+    });
+  }
+
+  runCapture(): void {
+    if (this.captureStatus() === 'running') return;
+    this.captureStatus.set('running');
+    this.scripts.runCapture(this.scenario(), this.captureHeaded()).subscribe({
+      next: (r) => this.captureStatus.set(r.ok ? 'done' : 'error'),
+      error: () => this.captureStatus.set('error'),
+    });
+  }
 
   private ctx!: CanvasRenderingContext2D;
   private timeline: Timeline | null = null;

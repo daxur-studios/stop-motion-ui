@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "generate-narration": "node ../scripts/generate-all-narration.mjs"
+    "generate-narration": "node ../scripts/generate-all-narration.mjs",
+    "dev-server": "node ../scripts/dev-server.mjs"
   },
   "private": true,
   "dependencies": {

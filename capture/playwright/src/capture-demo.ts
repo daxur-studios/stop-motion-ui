@@ -357,7 +357,15 @@ async function main(): Promise<void> {
   mkdirSync(STAGING_DIR, { recursive: true });
   const session = new CaptureSession({ outDir: STAGING_DIR, viewport: VIEWPORT, seed: 42 });
 
-  const browser = await chromium.launch({ headless: HEADLESS });
+  const browser = await chromium.launch({
+    headless: HEADLESS,
+    // Force 1x device scale factor in headed mode so Chromium doesn't need to
+    // zoom the window to compensate for OS display scaling (125%, 150%, etc.).
+    // Without this, each page.screenshot() triggers a zoom↔unzoom that causes
+    // visible flicker between screenshots. Headless ignores DPI so this is a
+    // no-op there — same 1280×800 output either way.
+    args: HEADLESS ? [] : ["--force-device-scale-factor=1"],
+  });
   const context = await browser.newContext({ viewport: VIEWPORT });
   const page = await context.newPage();
 

@@ -1,0 +1,10 @@
+{
+  "name": "stop-motion-ui",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "generate-narration": "node scripts/generate-all-narration.mjs",
+    "export-video": "node scripts/export-video.mjs"
+  }
+}

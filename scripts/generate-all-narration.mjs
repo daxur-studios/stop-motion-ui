@@ -33,7 +33,7 @@ for (const sc of scenarios) {
   }
   
   console.log(`\n--- Generating narration for scenario: ${sc} ---`);
-  const result = spawnSync('node', [scriptPath, scDir], {
+  const result = spawnSync('node', [scriptPath, scDir, ...process.argv.slice(2)], {
     stdio: 'inherit',
     shell: process.platform === 'win32',
   });

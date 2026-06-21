@@ -64,7 +64,7 @@ function parseArgs(argv) {
 
 async function run(cmd, args, opts = {}) {
   console.log('+', cmd, args.join(' '));
-  return execFileAsync(cmd, args, { maxBuffer: 1024 * 1024 * 64, ...opts });
+  return execFileAsync(cmd, args, { maxBuffer: 1024 * 1024 * 64, shell: process.platform === 'win32', ...opts });
 }
 
 async function main() {
