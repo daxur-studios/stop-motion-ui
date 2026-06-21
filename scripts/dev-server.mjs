@@ -127,7 +127,9 @@ const server = createServer(async (req, res) => {
     const narration = body.narration ?? "short";
     const fps = body.fps ?? 30;
     const outPath = path.join(dir, "export.mp4");
-    const result = await runProcess("node", [path.join(SCRIPTS_DIR, "export-video.mjs"), dir, `--narration=${narration}`, `--fps=${fps}`, `--out=${outPath}`], `Video export for ${scenario}`);
+    // playwright-export.mjs drives the Angular canvas directly — no Python/Pillow
+    // or ffprobe needed. Angular dev server must be running at localhost:4221.
+    const result = await runProcess("node", [path.join(SCRIPTS_DIR, "playwright-export.mjs"), scenario, `--narration=${narration}`, `--fps=${fps}`, `--out=${outPath}`], `Video export for ${scenario}`);
     respond(res, result.ok ? 200 : 500, result);
     return;
   }

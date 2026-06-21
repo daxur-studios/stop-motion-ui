@@ -186,6 +186,7 @@ type DevToolStatus = 'idle' | 'running' | 'done' | 'error';
   standalone: true,
   templateUrl: './replay-player.component.html',
   styleUrl: './replay-player.component.scss',
+  host: { '[class.export-mode]': 'exportMode()' },
 })
 export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   @ViewChild('stage', { static: true }) private stageRef!: ElementRef<HTMLCanvasElement>;
@@ -207,6 +208,7 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   readonly videoStatus = signal<DevToolStatus>('idle');
   readonly captureStatus = signal<DevToolStatus>('idle');
   readonly captureHeaded = signal(false);
+  readonly exportMode = signal(false);
 
   private scripts = inject(ScriptRunnerService);
 
@@ -250,6 +252,44 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     const canvas = this.stageRef.nativeElement;
     this.ctx = canvas.getContext('2d')!;
+
+    // Export mode: Playwright drives seekTo() for headless video capture.
+    // ?export=1 activates it; scenario + narration come from URL params too.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('export') === '1') {
+      this.exportMode.set(true);
+      const narMode = params.get('narration') as 'off' | 'short' | 'long' | null;
+      if (narMode && ['off', 'short', 'long'].includes(narMode)) {
+        this.narrationMode.set(narMode);
+      }
+      // Expose the API stub immediately; _audioEvents is filled in once
+      // loadScenario() resolves (before ready becomes true).
+      (window as any)['__stopMotion'] = {
+        _audioEvents: [] as Array<{ path: string; startMs: number }>,
+        waitForReady: () =>
+          new Promise<{ totalDurationMs: number; fps: number; audioEvents: Array<{ path: string; startMs: number }> }>(
+            (resolve) => {
+              const check = () => {
+                if (this.ready()) {
+                  resolve({
+                    totalDurationMs: this.totalDurationMs(),
+                    fps: 30,
+                    audioEvents: (window as any)['__stopMotion']._audioEvents,
+                  });
+                } else {
+                  setTimeout(check, 100);
+                }
+              };
+              check();
+            }
+          ),
+        seekTo: (ms: number): Promise<void> => {
+          this.currentTimeMs.set(ms);
+          this.render();
+          return Promise.resolve();
+        },
+      };
+    }
 
     const initial = this.initialScenarioFromUrl();
     this.scenario.set(initial);
@@ -910,6 +950,7 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
     // `el` stays null for estimated entries since there's nothing to
     // actually play; only the duration affects pacing.
     const narrationMap = new Map<string, NarrationInfo>();
+    const elToPath = new Map<HTMLAudioElement, string>();
     let estimatedCount = 0;
     const mode = this.narrationMode();
     if (mode !== 'off') {
@@ -922,6 +963,7 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
             const el = await this.loadAudioMeta(baseDir + audioRef);
             if (el) {
               narrationMap.set(ev.id, { ms: el.duration * 1000, el });
+              elToPath.set(el, audioRef);
               return;
             }
           }
@@ -936,6 +978,17 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
 
     const built = this.buildTimeline(manifest, getNarration);
     this.timeline = { ...built, baseDir };
+
+    // For export mode: recover (phase start time → audio file path) so the
+    // Playwright export script can pass them straight to ffmpeg for audio mixing.
+    // Done before ready.set(true) so waitForReady() always sees fresh data.
+    if (this.exportMode()) {
+      const audioEvents = built.phases
+        .filter((p) => p.narration instanceof HTMLAudioElement)
+        .map((p) => ({ path: elToPath.get(p.narration as HTMLAudioElement)!, startMs: p.t0 }))
+        .filter((e) => e.path != null);
+      (window as any)['__stopMotion']._audioEvents = audioEvents;
+    }
 
     // Include animated-scroll `frames` and asyncWait `frames` alongside each
     // event's own screenshotRef — otherwise those intermediate full-screen

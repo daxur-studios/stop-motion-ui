@@ -159,3 +159,29 @@ select {
     color: #6a8;
   }
 }
+
+// Playwright export mode — activated by ?export=1 URL param.
+// Hides all chrome so only the 1280×800 canvas is visible, and forces the
+// canvas to its exact pixel dimensions so screenshots are always 1280×800.
+:host.export-mode {
+  background: #000;
+
+  header,
+  #status,
+  #controls,
+  #dev-tools {
+    display: none;
+  }
+
+  #stage-wrap {
+    margin: 0;
+    justify-content: flex-start;
+  }
+
+  #stage {
+    max-width: none;
+    width: 1280px;
+    height: 800px;
+    border: none;
+  }
+}
