@@ -3,8 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/dev.mjs",
-    "generate-narration": "node scripts/generate-all-narration.mjs",
-    "export-video": "node scripts/export-video.mjs"
+    "dev": "node scripts/cli.mjs dev",
+    "capture": "node scripts/cli.mjs capture",
+    "narrate": "node scripts/cli.mjs narrate",
+    "generate-narration": "node scripts/cli.mjs narrate-all",
+    "export-video": "node scripts/cli.mjs export",
+    "export-video:legacy": "node scripts/cli.mjs export --legacy"
   }
 }

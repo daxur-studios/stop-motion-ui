@@ -1,5 +1,17 @@
 // Stop-Motion UI — Replay player.
 //
+// DEPRECATED (see docs/adr/ADR-012-export-pipeline-pivot-and-cli-consolidation.md
+// and task #28/#35 in the project task list): the Angular replay-app's
+// ReplayPlayerComponent is now the maintained, actively-developed player.
+// This vanilla version is kept around because it still works, has no build
+// step, and is occasionally handy for a quick file://-free sanity check —
+// but it is NOT guaranteed to receive new features going forward (it has
+// already drifted: it does not implement the maxDisplayMs cap / sped-up
+// indicator badge from ADR-011, since that work only touched the Angular
+// component and the export pipeline). Treat any divergence between this file
+// and replay-player.component.ts as expected, not a bug, unless you're
+// specifically asked to backport a fix here too.
+//
 // Plain JS + Canvas 2D, no framework, no build step (per ADR-002).
 // Loaded as a classic <script> (not type="module") so it also works when the
 // page is opened directly via file:// in browsers that block module fetches

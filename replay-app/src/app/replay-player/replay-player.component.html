@@ -165,7 +165,7 @@
     class="dev-btn"
     [disabled]="videoStatus() === 'running'"
     (click)="exportVideo()"
-    title="Run export-video.mjs for the selected scenario (needs dev-server + ffmpeg + Pillow)"
+    title="Drives this canvas headlessly via playwright-export.mjs and muxes it with ffmpeg (needs dev-server running + ng serve on :4221 + ffmpeg; no Pillow involved)"
   >
     @if (videoStatus() === 'running') { Exporting video… }
     @else if (videoStatus() === 'done') { Video done ✓ }

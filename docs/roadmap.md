@@ -2,13 +2,15 @@
 
 See also: [`docs/agent-maintainability.md`](./agent-maintainability.md) — what it takes for an AI agent to verify its own changes to this codebase without a human checking screenshots, what's missing today, and concrete next steps.
 
-## Feature: Headless video export — ✅ Done
+## Feature: Headless video export — ✅ Done (now two pipelines — see ADR-012)
 
 - Exports a scenario (screenshots + bezier cursor motion + circle gestures + asyncWait full-frame cycling + TTS narration) as a real compressed `.mp4`, instead of only playing live in-browser. **Video export is now the primary deliverable; the live in-browser players are an internal debug/preview tool only — see ADR-010.**
-- Run via `node scripts/export-video.mjs <scenario-dir> [--fps=30] [--narration=short|long|off] [--out=<path>]`.
-- Pipeline: `scripts/build-frame-plan.mjs` (Node port of `buildTimeline()`/`sampleAt()`/`drawRipples()` math, no rendering) → `scripts/render-frames.py` (Pillow rasterizes to a PNG sequence — no browser/node-canvas/sharp available in this sandbox, see ADR-009) → `ffmpeg` (mixes discrete narration clips via `adelay`+`amix`, then final-encodes frames+audio using Daxur-Daemon's exact `compress.ts` settings: `libx265 -crf 28 -preset medium -tag:v hvc1 -pix_fmt yuv420p`, `aac 128k`).
-- See ADR-009 for the full architecture, why node-canvas/sharp were ruled out, and the verified end-to-end run against scenario-1.
-- Known gaps: the timeline math is now a third copy alongside `player.js`/`ReplayPlayerComponent` (same duplication-maintenance risk already flagged for those two — see ADR-004); the orbit guide's dashed circle is an arc-based approximation, not a true canvas-identical dash pattern; narration-overlap handling in the audio mix is untested since no current scenario produces overlapping clips.
+- **As of ADR-012, there are two export pipelines, kept side by side on purpose:**
+  - **Canonical (what the Angular "Export Video" button and `npm run export-video` now both run):** `node scripts/cli.mjs export <scenario-dir> [...]` → `scripts/playwright-export.mjs`. Launches real headless Chromium, drives the **live** `replay-app` canvas via `window.__stopMotion.seekTo()/waitForReady()`, screenshots `#stage` frame-by-frame (pixel-identical to the live player, badge/ripples/cursor included for free), then ffmpeg-mixes audio and encodes with the same settings as below. Requires `npm run dev` already running (Angular dev server on :4221) and a real launchable browser — **not runnable in a sandboxed/CI/agent environment with no browser** (see `docs/agent-maintainability.md`).
+  - **Legacy (sandbox/CI-safe fallback):** `node scripts/cli.mjs export <scenario-dir> --legacy` → `scripts/export-video.mjs`. `scripts/build-frame-plan.mjs` (Node port of `buildTimeline()`/`sampleAt()`/`drawRipples()` math, no rendering) → `scripts/render-frames.py` (Pillow rasterizes to a PNG sequence) → `ffmpeg`. No browser or live dev server required — only Node, Python3+Pillow, ffmpeg.
+  - Both final-encode with Daxur-Daemon's exact `compress.ts` settings: `libx265 -crf 28 -preset medium -tag:v hvc1 -pix_fmt yuv420p`, `aac 128k`.
+- See ADR-009 for the original architecture and why node-canvas/sharp were ruled out for the legacy path; see ADR-012 for why the Playwright path became canonical and why the legacy path wasn't deleted.
+- Known gaps: the timeline math is now a third copy alongside `player.js`/`ReplayPlayerComponent` (same duplication-maintenance risk already flagged for those two — see ADR-004) — and per ADR-012, the legacy Pillow renderer can now also silently drift from what the live canvas actually draws, since nothing enforces the two pipelines staying in visual sync; narration-overlap handling in the audio mix is untested since no current scenario produces overlapping clips.
 
 ## Feature: TTS narration for replays — ✅ Done
 
@@ -87,4 +89,17 @@ See also: [`docs/agent-maintainability.md`](./agent-maintainability.md) — what
 - Cost comparison vs the discrete N-frame approach above (N=12 default, raw pixel cost ≈ `N × V`): tall-strip (`≈ V + S`) is cheaper whenever `S < (N-1) × V` — i.e. unless one scroll gesture covers more than ~11 screens (N=12), which essentially never happens in a real demo. So tall-strip beats discrete frames on storage for virtually all realistic scroll distances, and gives continuous motion instead of discrete frame jumps
 - Caveat/condition: only valid when page content is static during the scroll — only what's *in view* changes, not the content itself. If something inside the viewport changes independent of scroll position (lazy-loading list populating, animated sticky header, autoplaying video, live counter), a single static strip can't represent that — falls back to the discrete N-frame approach above
   - Further-out idea, not to be designed now: a hybrid — tall-strip for the static base, discrete frames layered on top for the dynamic regions (would also lean on the element-region compositing idea in `docs/open-questions.md`)
+
+## Feature: Root-level CLI consolidation — ✅ Done (see ADR-012)
+
+- Problem: scripts lived across `scripts/`, `capture/playwright/`, and `replay-app/`, each with its own `package.json`/invocation convention — no single documented command sequence for "capture → narrate → export" from the repo root (flagged as a maintainability gap in `docs/agent-maintainability.md`).
+- Added `scripts/cli.mjs`, a thin dispatcher with subcommands `dev`, `capture`, `narrate`, `narrate-all`, `export` (canonical Playwright path), `export --legacy` (Pillow fallback path). No pipeline logic reimplemented — it only spawns the existing scripts with the right args/cwd.
+- Root `package.json` now forwards through it: `npm run dev`, `npm run capture`, `npm run narrate`, `npm run generate-narration`, `npm run export-video`, `npm run export-video:legacy`.
+- `capture/playwright/package.json` and `replay-app/package.json` are unchanged — direct invocation from those subfolders still works for anyone who prefers it.
+- Still outstanding: no unit tests, no hash-based regeneration beyond narration — see `docs/agent-maintainability.md`'s next-steps list and tasks #30/#31.
+
+## Maintenance note: `replay/player.js` deprecation started
+
+- `replay/player.js` (the vanilla JS/Canvas player) now carries an explicit deprecation notice in its header pointing at `replay-app`'s `ReplayPlayerComponent` as the maintained player. It is **not yet removed** — it still works and has no build step, so it's kept as a fallback, but it will not necessarily receive new features going forward. It has already drifted: it does not implement the ADR-011 `maxDisplayMs`/sped-up-indicator badge, since that work only touched the Angular component and the export pipeline.
+- README's "Replay player" status entries still describe `replay/player.js` as co-equal to the Angular wrapper ("an alternative, not a replacement") — that framing is now stale and should be revisited once a decision is made on whether/when to actually remove the vanilla player, not just deprecate it.
 - Recommendation: default to tall-strip + camera-pan for scroll showcases on pages with static content during scroll (the common case); reserve discrete frame-sampling (already built above) for scrolls where content changes mid-gesture, which should be rare — flag as a follow-up refinement, not yet built
