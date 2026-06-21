@@ -210,14 +210,40 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   readonly captureHeaded = signal(false);
   readonly exportMode = signal(false);
 
+  /** 'premade' = choose from Chatterbox built-in voices; 'custom' = supply your own file for voice cloning */
+  readonly ttsVoiceMode = signal<'premade' | 'custom'>('premade');
+  readonly ttsPremadeVoice = signal('Abigail.wav');
+  /** Filename returned by the dev-server after a voice file is uploaded */
+  readonly ttsCustomVoice = signal('');
+  readonly ttsUploadStatus = signal<'idle' | 'uploading' | 'done' | 'error'>('idle');
+  readonly ttsForce = signal(false);
+
   private scripts = inject(ScriptRunnerService);
 
   generateNarration(): void {
     if (this.ttsStatus() === 'running') return;
     this.ttsStatus.set('running');
-    this.scripts.generateNarration(this.scenario()).subscribe({
-      next: (r) => this.ttsStatus.set(r.ok ? 'done' : 'error'),
-      error: () => this.ttsStatus.set('error'),
+    const voice =
+      this.ttsVoiceMode() === 'custom' ? this.ttsCustomVoice() : this.ttsPremadeVoice();
+    this.scripts
+      .generateNarration(this.scenario(), { voice: voice || undefined, force: this.ttsForce() })
+      .subscribe({
+        next: (r) => this.ttsStatus.set(r.ok ? 'done' : 'error'),
+        error: () => this.ttsStatus.set('error'),
+      });
+  }
+
+  onVoiceFileChange(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.ttsUploadStatus.set('uploading');
+    this.ttsCustomVoice.set('');
+    this.scripts.uploadVoice(file).subscribe({
+      next: (r) => {
+        this.ttsCustomVoice.set(r.voice);
+        this.ttsUploadStatus.set('done');
+      },
+      error: () => this.ttsUploadStatus.set('error'),
     });
   }
 
@@ -960,10 +986,15 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
           const audioRef = mode === 'long' ? ev.narrationAudioLong : ev.narrationAudioShort;
           const text = mode === 'long' ? ev.narrationLong : ev.narrationShort;
           if (audioRef) {
-            const el = await this.loadAudioMeta(baseDir + audioRef);
+            // audioRef is either a relative path (old on-disk audio in public/)
+            // or an absolute URL (audio served by dev-server from ignore/audio/).
+            const audioSrc = audioRef.startsWith('http://') || audioRef.startsWith('https://') || audioRef.startsWith('/')
+              ? audioRef
+              : baseDir + audioRef;
+            const el = await this.loadAudioMeta(audioSrc);
             if (el) {
               narrationMap.set(ev.id, { ms: el.duration * 1000, el });
-              elToPath.set(el, audioRef);
+              elToPath.set(el, audioSrc);
               return;
             }
           }

@@ -146,6 +146,37 @@ select {
   }
 }
 
+.dev-file-label {
+  cursor: pointer;
+
+  &.uploading {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.dev-voice-name {
+  font-size: 11px;
+  color: #8ba;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.dev-voice-error {
+    color: #c66;
+  }
+}
+
+.dev-select {
+  font-size: 12px;
+  padding: 4px 7px;
+  background: #253040;
+  border-color: #3a4a60;
+  color: #ccd;
+}
+
+
 .dev-tools-hint {
   margin-left: auto;
   font-size: 11px;

@@ -32,7 +32,7 @@ const DEFAULT_SEED = 42;
 
 function parseArgs(argv) {
   const positional = [];
-  const flags = { voice: DEFAULT_VOICE, seed: DEFAULT_SEED, force: false };
+  const flags = { voice: DEFAULT_VOICE, seed: DEFAULT_SEED, force: false, audioDir: null, audioBaseUrl: null };
   for (const arg of argv) {
     if (arg === '--force') {
       flags.force = true;
@@ -40,6 +40,10 @@ function parseArgs(argv) {
       flags.voice = arg.slice('--voice='.length);
     } else if (arg.startsWith('--seed=')) {
       flags.seed = Number(arg.slice('--seed='.length));
+    } else if (arg.startsWith('--audio-dir=')) {
+      flags.audioDir = arg.slice('--audio-dir='.length);
+    } else if (arg.startsWith('--audio-base-url=')) {
+      flags.audioBaseUrl = arg.slice('--audio-base-url='.length);
     } else {
       positional.push(arg);
     }
@@ -93,7 +97,10 @@ async function main() {
 
   const manifestPath = path.join(scenarioDir, 'manifest.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  const narrationDir = path.join(scenarioDir, 'narration');
+  // --audio-dir redirects audio output outside the Angular public/ tree so ng
+  // serve doesn't hot-reload on each clip. Paired with --audio-base-url which
+  // becomes the URL prefix stored in the manifest (absolute, served by dev-server).
+  const narrationDir = flags.audioDir ?? path.join(scenarioDir, 'narration');
   await mkdir(narrationDir, { recursive: true });
 
   let generated = 0;
@@ -110,11 +117,13 @@ async function main() {
       if (!text) continue;
 
       const fileName = `${ev.id}-${label}.${AUDIO_EXT}`;
-      const relPath = `narration/${fileName}`;
+      // When --audio-base-url is provided, store an absolute URL so the browser
+      // can fetch audio from the dev-server instead of Angular's asset path.
+      const storedPath = flags.audioBaseUrl ? `${flags.audioBaseUrl}/${fileName}` : `narration/${fileName}`;
       const absPath = path.join(narrationDir, fileName);
 
       if (!flags.force && (await fileExists(absPath))) {
-        ev[audioField] = relPath;
+        ev[audioField] = storedPath;
         skipped++;
         console.log(`skip  (exists) ${ev.id} [${label}]`);
         continue;
@@ -123,7 +132,7 @@ async function main() {
       console.log(`gen   ${ev.id} [${label}]: "${text.slice(0, 60)}${text.length > 60 ? '…' : ''}"`);
       const audio = await synthesize(text, flags.voice, flags.seed);
       await writeFile(absPath, audio);
-      ev[audioField] = relPath;
+      ev[audioField] = storedPath;
       generated++;
     }
   }
