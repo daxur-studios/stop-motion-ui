@@ -1,8 +1,3 @@
-// Angular Material structural CSS — required for mat-select's overlay panel,
-// mat-dialog's backdrop, etc. Still imported as prebuilt CSS (no Sass
-// equivalent needed for pure structural/positioning rules).
-@import '@angular/cdk/overlay-prebuilt.css';
-
 // Angular Material 3 theme (mat.theme() Sass API + light/dark palette +
 // ThemeService class toggling) — see src/app/theme/. This replaces the old
 // `@import '@angular/material/prebuilt-themes/indigo-pink.css'` (a fixed
@@ -14,7 +9,16 @@
 //
 // Follows the pattern prescribed by
 // Daxur-Daemon/cli/src/scaffold/recipes/angular-firebase-20/AGENT.md.
+//
+// NOTE: @use must come before any other rule in a Sass stylesheet (including
+// @import), so it's placed first here even though it was introduced after
+// the @import below historically.
 @use 'app/theme/theme.scss';
+
+// Angular Material structural CSS — required for mat-select's overlay panel,
+// mat-dialog's backdrop, etc. Still imported as prebuilt CSS (no Sass
+// equivalent needed for pure structural/positioning rules).
+@import '@angular/cdk/overlay-prebuilt.css';
 
 html,
 body {
