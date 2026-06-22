@@ -23,6 +23,22 @@ export type TtsConfigUpdate = {
   elevenlabs?: { apiKey?: string; clearApiKey?: boolean; voiceId?: string; modelId?: string };
 };
 
+// Mirrors dev-server.mjs's POST /api/voices/upload response shape. The file
+// is always saved locally (to LOCAL_VOICES_DIR) if this resolves at all, but
+// `chatterboxUpload.ok` can still be false — that means Chatterbox's own
+// server (its /upload_predefined_voice endpoint) rejected or never received
+// the file, so the filename will NOT actually work as a --voice value yet
+// even though it looks "uploaded" locally. Callers MUST check
+// chatterboxUpload.ok rather than assuming a 200 response means the voice is
+// usable — see ADR-014 history / the CHATTERBOX_VOICES_DIR removal in
+// dev-server.mjs for why a local-only success used to silently mask this.
+export type VoiceUploadResult = {
+  voice: string;
+  path: string;
+  chatterboxUpload?: { ok: true } | { ok: false; error: string };
+  warning?: string;
+};
+
 export type ElevenlabsVoiceOption = { voiceId: string; name: string; category?: string | null };
 
 export type ElevenlabsVoicesResult =
@@ -62,13 +78,13 @@ export class ScriptRunnerService {
     return this.http.post<ScriptResult>(`${DEV_SERVER}/api/capture`, { scenario, headed });
   }
 
-  uploadVoice(file: File): Observable<{ voice: string; path: string }> {
+  uploadVoice(file: File): Observable<VoiceUploadResult> {
     return new Observable((observer) => {
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = (reader.result as string).split(',')[1];
         this.http
-          .post<{ voice: string; path: string }>(`${DEV_SERVER}/api/voices/upload`, {
+          .post<VoiceUploadResult>(`${DEV_SERVER}/api/voices/upload`, {
             filename: file.name,
             data: base64,
           })

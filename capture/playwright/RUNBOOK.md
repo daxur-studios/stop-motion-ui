@@ -31,16 +31,27 @@
    cd replay-app
    npm install
 
-   cd ../../shared
-   npm install   # required — capture-session.ts's `sharp` import resolves
-                 # from here, not from capture/playwright/node_modules; see
-                 # ADR-006. Skipping this fails with
-                 # "Cannot find package 'sharp' imported from .../shared/capture-session.ts"
-                 # the moment capture-demo.ts runs.
-
    cd ../capture/playwright
-   npm install   # postinstall runs `playwright install chromium`
+   npm install   # postinstall now also runs `npm install --prefix ../../shared`
+                 # (in addition to `playwright install chromium`), so this one
+                 # command is enough — see below for why that's necessary.
    ```
+
+   `capture-session.ts` re-exports `../../../shared/capture-session.ts` via a
+   *relative* import (not through `node_modules/stop-motion-shared`), so
+   Node resolves that file's own `import 'sharp'` starting from `shared/`'s
+   real on-disk location, not from `capture/playwright/node_modules` — see
+   ADR-006 and the comment at the top of `src/capture-session.ts`. Declaring
+   `sharp` in `capture/playwright/package.json` alone doesn't help this
+   import site at all; `sharp` has to actually be installed under
+   `shared/node_modules`. The `postinstall` script's
+   `npm install --prefix ../../shared` step does exactly that automatically,
+   so — unlike before — there's no separate manual `cd ../../shared && npm
+   install` step required any more. If you ever see
+   `Cannot find package 'sharp' imported from .../shared/capture-session.ts`
+   again, it means that postinstall step didn't run (e.g. install was
+   interrupted) — re-run `npm install` in `capture/playwright/`, or run
+   `npm install --prefix ../../shared` directly.
 
 2. **Serve the Angular app** (terminal 1):
 

@@ -26,14 +26,16 @@ const ROOT = path.resolve(SCRIPTS_DIR, "..");
 const LOCAL_VOICES_DIR = process.env.LOCAL_VOICES_DIR ?? path.join(ROOT, "ignore");
 const NARRATION_DIR = process.env.NARRATION_DIR ?? path.join(ROOT, "ignore", "audio");
 
-// Chatterbox's own voices directory (Docker volume mount). Uploaded files are
-// mirrored here so Chatterbox can find them by filename. Defaults to an
-// in-repo, gitignored folder so this works out of the box on a fresh clone —
-// override with CHATTERBOX_VOICES_DIR if your Chatterbox instance mounts a
-// different host path (e.g. a sibling Chatterbox-TTS-Server checkout).
-const CHATTERBOX_VOICES_DIR =
-  process.env.CHATTERBOX_VOICES_DIR ??
-  path.resolve(ROOT, "ignore", "chatterbox-voices");
+// NOTE: voice uploads no longer get mirrored into a guessed Chatterbox
+// directory (there used to be a CHATTERBOX_VOICES_DIR for that). That
+// approach silently broke whenever the guessed path didn't match wherever
+// the real Chatterbox server's voices directory actually lives (its own
+// folder, a Docker volume mount, a different host, etc.) — the in-repo
+// default added for public-repo portability was exactly such a mismatch.
+// Uploads now go through Chatterbox's own HTTP API instead — see
+// uploadVoiceToChatterboxServer() below — which only requires
+// CHATTERBOX_TTS_URL (or the saved chatterbox.ttsUrl) to point at the right
+// server; no filesystem path guessing needed.
 
 // Gitignored local TTS settings file written by the Settings panel — see
 // docs/adr/ADR-014-tts-settings-ui.md. Holds the active provider plus
@@ -206,10 +208,24 @@ function chatterboxVoicesUrl(ttsUrl) {
   return ttsUrl.replace(/\/v1\/audio\/speech\/?$/, "/v1/audio/voices");
 }
 
-async function fetchChatterboxVoices() {
+// Base server URL (e.g. http://localhost:8004) derived from whichever speech
+// URL is currently configured. Used to call Chatterbox's own UI-helper /
+// file-management HTTP endpoints (upload, reference-file listing) instead of
+// guessing where its voices/reference_audio directories live on disk — those
+// directories can be anywhere (a Docker volume, a different host entirely),
+// so going through Chatterbox's own API is the only way that's guaranteed to
+// agree with what /v1/audio/speech can actually serve.
+function chatterboxBaseUrl(ttsUrl) {
+  return ttsUrl.replace(/\/v1\/audio\/speech\/?$/, "");
+}
+
+async function getChatterboxTtsUrl() {
   const config = await loadTtsConfig();
-  const ttsUrl =
-    config.chatterbox?.ttsUrl || process.env.CHATTERBOX_TTS_URL || "http://localhost:8004/v1/audio/speech";
+  return config.chatterbox?.ttsUrl || process.env.CHATTERBOX_TTS_URL || "http://localhost:8004/v1/audio/speech";
+}
+
+async function fetchChatterboxVoices() {
+  const ttsUrl = await getChatterboxTtsUrl();
   const voicesUrl = chatterboxVoicesUrl(ttsUrl);
   try {
     const res = await fetch(voicesUrl);
@@ -222,6 +238,52 @@ async function fetchChatterboxVoices() {
     return { ok: true, voices };
   } catch (err) {
     return { ok: false, status: 502, error: `Could not reach Chatterbox at ${voicesUrl}: ${err.message}` };
+  }
+}
+
+// Lists files Chatterbox will accept as --voice=<filename> for *cloning*
+// (its reference_audio dir), via Chatterbox's own /get_reference_files
+// UI-helper endpoint. Combined with fetchChatterboxVoices() (predefined
+// voices) this gives the full, server-verified set of valid --voice values —
+// no directory-path guessing on our end at all.
+async function fetchChatterboxReferenceFiles() {
+  const ttsUrl = await getChatterboxTtsUrl();
+  const url = `${chatterboxBaseUrl(ttsUrl)}/get_reference_files`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const text = await res.text().catch(() => "<no body>");
+      return { ok: false, status: res.status, error: `Chatterbox reference-files request failed (${res.status}): ${text}` };
+    }
+    const files = await res.json();
+    return { ok: true, files: Array.isArray(files) ? files : [] };
+  } catch (err) {
+    return { ok: false, status: 502, error: `Could not reach Chatterbox at ${url}: ${err.message}` };
+  }
+}
+
+// Uploads a voice-clone reference file directly to Chatterbox's own HTTP
+// upload endpoint, rather than writing it into a directory we *hope*
+// Chatterbox is also reading from. This is the fix for the CHATTERBOX_VOICES_DIR
+// directory-mismatch problem: as long as CHATTERBOX_TTS_URL/the saved
+// chatterbox.ttsUrl points at the right server, the file lands in the right
+// place no matter what its on-disk layout is (Docker volume, remote host,
+// whatever) — same as how /v1/audio/speech already works.
+async function uploadVoiceToChatterboxServer(filename, buffer) {
+  const ttsUrl = await getChatterboxTtsUrl();
+  const url = `${chatterboxBaseUrl(ttsUrl)}/upload_predefined_voice`;
+  try {
+    const form = new FormData();
+    form.append("files", new Blob([buffer]), filename);
+    const res = await fetch(url, { method: "POST", body: form });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "<no body>");
+      return { ok: false, status: res.status, error: `Chatterbox upload failed (${res.status}): ${text}` };
+    }
+    const data = await res.json().catch(() => ({}));
+    return { ok: true, data };
+  } catch (err) {
+    return { ok: false, status: 502, error: `Could not reach Chatterbox at ${url}: ${err.message}` };
   }
 }
 
@@ -390,14 +452,30 @@ const server = createServer(async (req, res) => {
     await mkdir(LOCAL_VOICES_DIR, { recursive: true });
     const dest = path.join(LOCAL_VOICES_DIR, base);
     await writeFile(dest, buffer);
-    console.log(`[dev-server] Voice saved: ${dest}`);
-    // Mirror to Chatterbox's voices dir so it can find the file by filename.
-    if (CHATTERBOX_VOICES_DIR !== LOCAL_VOICES_DIR) {
-      await mkdir(CHATTERBOX_VOICES_DIR, { recursive: true });
-      await writeFile(path.join(CHATTERBOX_VOICES_DIR, base), buffer);
-      console.log(`[dev-server] Voice mirrored to Chatterbox: ${path.join(CHATTERBOX_VOICES_DIR, base)}`);
+    console.log(`[dev-server] Voice saved locally: ${dest}`);
+    // Upload to Chatterbox's own HTTP API rather than writing into a
+    // directory we *hope* Chatterbox is also reading from (see
+    // CHATTERBOX_VOICES_DIR comment above — that approach silently breaks
+    // whenever this app's guessed path and Chatterbox's real, possibly
+    // Docker-mounted voices directory disagree, which is exactly what
+    // happened here: a public-repo portability fix pointed the guess at an
+    // in-repo folder that the real server never reads from).
+    const upload = await uploadVoiceToChatterboxServer(base, buffer);
+    if (!upload.ok) {
+      console.error(`[dev-server] Voice saved locally but Chatterbox upload failed: ${upload.error}`);
+      respond(res, 200, {
+        voice: base,
+        path: dest,
+        chatterboxUpload: { ok: false, error: upload.error },
+        warning:
+          `Saved locally, but could not upload to Chatterbox at the configured TTS URL — ` +
+          `the server won't be able to find '${base}' yet. Check CHATTERBOX_TTS_URL / the ` +
+          `saved chatterbox.ttsUrl and that the Chatterbox server is running.`,
+      });
+      return;
     }
-    respond(res, 200, { voice: base, path: dest });
+    console.log(`[dev-server] Voice uploaded to Chatterbox: ${base}`);
+    respond(res, 200, { voice: base, path: dest, chatterboxUpload: { ok: true } });
     return;
   }
 
@@ -481,7 +559,7 @@ server.listen(PORT, () => {
   console.log(`[dev-server] POST /api/voices/upload  { filename: "my.mp3", data: "<base64>" }`);
   console.log(`[dev-server] POST /api/video          { scenario: "scenario-1", narration?: "short"|"long"|"off", fps?: 30 }`);
   console.log(`[dev-server] Voices (local):      ${LOCAL_VOICES_DIR}  (override with LOCAL_VOICES_DIR)`);
-  console.log(`[dev-server] Voices (Chatterbox): ${CHATTERBOX_VOICES_DIR}  (override with CHATTERBOX_VOICES_DIR)`);
+  console.log(`[dev-server] Voice uploads go to Chatterbox via its own HTTP API (CHATTERBOX_TTS_URL / saved chatterbox.ttsUrl) — not a local directory mirror.`);
   console.log(`[dev-server] Narration audio dir: ${NARRATION_DIR}  (override with NARRATION_DIR)`);
   console.log(`[dev-server] Local TTS config:    ${LOCAL_TTS_CONFIG_PATH}  (gitignored, see ADR-014)`);
   console.log(`[dev-server] CORS open to http://localhost:4221`);

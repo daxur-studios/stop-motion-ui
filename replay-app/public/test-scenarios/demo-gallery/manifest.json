@@ -21,8 +21,8 @@
       "url": "http://localhost:4221/",
       "narrationShort": "Starting on the Replay Player view.",
       "narrationLong": "This is the Replay Player view, where a previously captured manifest plays back.",
-      "narrationAudioShort": "narration/nav-1-short.ogg",
-      "narrationAudioLong": "narration/nav-1-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/nav-1-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/nav-1-long.ogg"
     },
     {
       "id": "click-2",
@@ -37,8 +37,8 @@
       "target": "[data-testid=\"nav-demos\"]",
       "narrationShort": "Switching to the Demo Gallery.",
       "narrationLong": "Clicking the Demo Gallery tab navigates to a page with several small example widgets.",
-      "narrationAudioShort": "narration/click-2-short.ogg",
-      "narrationAudioLong": "narration/click-2-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-2-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-2-long.ogg"
     },
     {
       "id": "click-3",
@@ -53,8 +53,8 @@
       "target": "[data-testid=\"demo-counter-increment\"]",
       "narrationShort": "Incrementing the counter.",
       "narrationLong": "Clicking the increment button increases the counter value by one.",
-      "narrationAudioShort": "narration/click-3-short.ogg",
-      "narrationAudioLong": "narration/click-3-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-3-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-3-long.ogg"
     },
     {
       "id": "click-4",
@@ -69,8 +69,8 @@
       "target": "[data-testid=\"demo-counter-increment\"]",
       "narrationShort": "Incrementing the counter.",
       "narrationLong": "Clicking the increment button increases the counter value by one.",
-      "narrationAudioShort": "narration/click-4-short.ogg",
-      "narrationAudioLong": "narration/click-4-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-4-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-4-long.ogg"
     },
     {
       "id": "circle-5",
@@ -87,8 +87,8 @@
       "duration": 1200,
       "narrationShort": "Here is the updated count.",
       "narrationLong": "Circling the counter value draws attention to the result after both increments.",
-      "narrationAudioShort": "narration/circle-5-short.ogg",
-      "narrationAudioLong": "narration/circle-5-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/circle-5-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/circle-5-long.ogg"
     },
     {
       "id": "click-6",
@@ -103,8 +103,8 @@
       "target": "[data-testid=\"demo-form-submit\"]",
       "narrationShort": "Submitting the form.",
       "narrationLong": "After filling in a name and email, submitting the form waits out a simulated network delay before confirming.",
-      "narrationAudioShort": "narration/click-6-short.ogg",
-      "narrationAudioLong": "narration/click-6-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-6-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-6-long.ogg"
     },
     {
       "id": "click-7",
@@ -119,8 +119,8 @@
       "target": "[data-testid=\"demo-wizard-next\"]",
       "narrationShort": "Wizard step 1 of 3.",
       "narrationLong": "Clicking Next advances the wizard from step 1 to the following step.",
-      "narrationAudioShort": "narration/click-7-short.ogg",
-      "narrationAudioLong": "narration/click-7-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-7-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-7-long.ogg"
     },
     {
       "id": "click-8",
@@ -135,8 +135,8 @@
       "target": "[data-testid=\"demo-wizard-next\"]",
       "narrationShort": "Wizard step 2 of 3.",
       "narrationLong": "Clicking Next advances the wizard from step 2 to the following step.",
-      "narrationAudioShort": "narration/click-8-short.ogg",
-      "narrationAudioLong": "narration/click-8-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-8-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-8-long.ogg"
     },
     {
       "id": "click-9",
@@ -151,8 +151,8 @@
       "target": "[data-testid=\"demo-wizard-next\"]",
       "narrationShort": "Wizard step 3 of 3.",
       "narrationLong": "Clicking Next advances the wizard from step 3 to the following step.",
-      "narrationAudioShort": "narration/click-9-short.ogg",
-      "narrationAudioLong": "narration/click-9-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-9-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-9-long.ogg"
     },
     {
       "id": "click-10",
@@ -167,8 +167,8 @@
       "target": "[data-testid=\"nav-kitchen-sink\"]",
       "narrationShort": "Opening the Kitchen Sink page.",
       "narrationLong": "Switching to the Kitchen Sink page, a stress-test fixture covering text input, a long wait, a select, and a dialog.",
-      "narrationAudioShort": "narration/click-10-short.ogg",
-      "narrationAudioLong": "narration/click-10-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-10-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-10-long.ogg"
     },
     {
       "id": "click-11",
@@ -183,8 +183,8 @@
       "target": "[data-testid=\"kitchen-sink-text-input\"]",
       "narrationShort": "Typing a name into the text field.",
       "narrationLong": "Clicking the text input and filling it with a name, set in one step rather than keystroke by keystroke.",
-      "narrationAudioShort": "narration/click-11-short.ogg",
-      "narrationAudioLong": "narration/click-11-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-11-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-11-long.ogg"
     },
     {
       "id": "click-12",
@@ -199,8 +199,8 @@
       "target": "[data-testid=\"kitchen-sink-textarea\"]",
       "narrationShort": "Adding some notes.",
       "narrationLong": "Filling in the textarea with a short note about this capture run.",
-      "narrationAudioShort": "narration/click-12-short.ogg",
-      "narrationAudioLong": "narration/click-12-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-12-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-12-long.ogg"
     },
     {
       "id": "scroll-18",
@@ -223,8 +223,8 @@
       ],
       "narrationShort": "Scrolling down to the dropdown.",
       "narrationLong": "Scrolling further down the page brings the select field into view.",
-      "narrationAudioShort": "narration/scroll-18-short.ogg",
-      "narrationAudioLong": "narration/scroll-18-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/scroll-18-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/scroll-18-long.ogg"
     },
     {
       "id": "click-19",
@@ -239,8 +239,8 @@
       "target": "[data-testid=\"kitchen-sink-select\"]",
       "narrationShort": "Opening the dropdown.",
       "narrationLong": "Clicking the select field opens its dropdown panel of options.",
-      "narrationAudioShort": "narration/click-19-short.ogg",
-      "narrationAudioLong": "narration/click-19-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-19-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-19-long.ogg"
     },
     {
       "id": "click-20",
@@ -255,8 +255,8 @@
       "target": "[data-testid=\"kitchen-sink-select-option-beta\"]",
       "narrationShort": "Picking the Beta option.",
       "narrationLong": "Selecting Beta from the dropdown list closes the panel and updates the field.",
-      "narrationAudioShort": "narration/click-20-short.ogg",
-      "narrationAudioLong": "narration/click-20-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-20-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-20-long.ogg"
     },
     {
       "id": "scroll-26",
@@ -280,8 +280,8 @@
       "frameDurationMs": 750,
       "narrationShort": "Scrolling down to the long action.",
       "narrationLong": "Scrolling further down the page brings the long async action into view.",
-      "narrationAudioShort": "narration/scroll-26-short.ogg",
-      "narrationAudioLong": "narration/scroll-26-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/scroll-26-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/scroll-26-long.ogg"
     },
     {
       "id": "click-27",
@@ -296,8 +296,8 @@
       "target": "[data-testid=\"kitchen-sink-async-trigger\"]",
       "narrationShort": "Starting the long action.",
       "narrationLong": "This simulates a real network request that can take many seconds to finish, while a progress bar and spinner show that it is working.",
-      "narrationAudioShort": "narration/click-27-short.ogg",
-      "narrationAudioLong": "narration/click-27-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-27-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-27-long.ogg"
     },
     {
       "id": "asyncwait-33",
@@ -323,8 +323,8 @@
       "maxDisplayMs": 2500,
       "narrationShort": "Waiting for the action to finish.",
       "narrationLong": "The action runs in the background while a progress bar and spinner show it working, compressed here from its real duration.",
-      "narrationAudioShort": "narration/asyncwait-33-short.ogg",
-      "narrationAudioLong": "narration/asyncwait-33-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/asyncwait-33-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/asyncwait-33-long.ogg"
     },
     {
       "id": "circle-34",
@@ -341,8 +341,8 @@
       "duration": 1000,
       "narrationShort": "Done — the action completed.",
       "narrationLong": "The long-running action has finished and the result is now shown.",
-      "narrationAudioShort": "narration/circle-34-short.ogg",
-      "narrationAudioLong": "narration/circle-34-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/circle-34-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/circle-34-long.ogg"
     },
     {
       "id": "scroll-35",
@@ -357,8 +357,8 @@
       "scrollY": 1232,
       "narrationShort": "Scrolling down to the dialog trigger.",
       "narrationLong": "Scrolling further down the page brings the dialog trigger button into view.",
-      "narrationAudioShort": "narration/scroll-35-short.ogg",
-      "narrationAudioLong": "narration/scroll-35-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/scroll-35-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/scroll-35-long.ogg"
     },
     {
       "id": "click-36",
@@ -373,8 +373,8 @@
       "target": "[data-testid=\"kitchen-sink-dialog-trigger\"]",
       "narrationShort": "Opening the dialog.",
       "narrationLong": "Clicking the dialog trigger opens a modal dialog on top of the page.",
-      "narrationAudioShort": "narration/click-36-short.ogg",
-      "narrationAudioLong": "narration/click-36-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-36-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-36-long.ogg"
     },
     {
       "id": "click-37",
@@ -389,8 +389,8 @@
       "target": "[data-testid=\"kitchen-sink-dialog-close\"]",
       "narrationShort": "Closing the dialog.",
       "narrationLong": "Clicking Close dismisses the dialog and returns to the page underneath.",
-      "narrationAudioShort": "narration/click-37-short.ogg",
-      "narrationAudioLong": "narration/click-37-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/click-37-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/click-37-long.ogg"
     },
     {
       "id": "scroll-38",
@@ -405,8 +405,8 @@
       "scrollY": 1232,
       "narrationShort": "Scrolling to the bottom of the page.",
       "narrationLong": "Scrolling all the way down brings the bottom marker into view.",
-      "narrationAudioShort": "narration/scroll-38-short.ogg",
-      "narrationAudioLong": "narration/scroll-38-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/scroll-38-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/scroll-38-long.ogg"
     },
     {
       "id": "circle-39",
@@ -423,8 +423,8 @@
       "duration": 900,
       "narrationShort": "And that is the whole page.",
       "narrationLong": "Reaching the bottom marker confirms the page can be traversed end to end.",
-      "narrationAudioShort": "narration/circle-39-short.ogg",
-      "narrationAudioLong": "narration/circle-39-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/demo-gallery/circle-39-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/demo-gallery/circle-39-long.ogg"
     }
   ]
 }

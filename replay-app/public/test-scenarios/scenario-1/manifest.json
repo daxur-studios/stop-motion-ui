@@ -21,8 +21,8 @@
       "url": "https://example.test/dashboard",
       "narrationShort": "Opening the dashboard.",
       "narrationLong": "We start out on the main dashboard, which is where you'll land right after signing in.",
-      "narrationAudioShort": "narration/nav-1-short.ogg",
-      "narrationAudioLong": "narration/nav-1-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/scenario-1/nav-1-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/scenario-1/nav-1-long.ogg"
     },
     {
       "id": "click-2",
@@ -37,8 +37,8 @@
       "target": "#settings-btn",
       "narrationShort": "Open settings.",
       "narrationLong": "Clicking the settings button in the top right corner to open up the configuration panel.",
-      "narrationAudioShort": "narration/click-2-short.ogg",
-      "narrationAudioLong": "narration/click-2-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/scenario-1/click-2-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/scenario-1/click-2-long.ogg"
     },
     {
       "id": "circle-3",
@@ -55,8 +55,8 @@
       "duration": 1600,
       "narrationShort": "Here are your notification settings.",
       "narrationLong": "This section controls your notification preferences — you can fine-tune exactly which alerts you want to receive and how.",
-      "narrationAudioShort": "narration/circle-3-short.ogg",
-      "narrationAudioLong": "narration/circle-3-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/scenario-1/circle-3-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/scenario-1/circle-3-long.ogg"
     },
     {
       "id": "click-4",
@@ -71,8 +71,8 @@
       "target": "#save-btn",
       "narrationShort": "Save changes.",
       "narrationLong": "Finally, click save to apply the new settings and return to the dashboard.",
-      "narrationAudioShort": "narration/click-4-short.ogg",
-      "narrationAudioLong": "narration/click-4-long.ogg"
+      "narrationAudioShort": "http://localhost:3001/narration/scenario-1/click-4-short.ogg",
+      "narrationAudioLong": "http://localhost:3001/narration/scenario-1/click-4-long.ogg"
     }
   ]
 }

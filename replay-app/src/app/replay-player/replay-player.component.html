@@ -139,7 +139,16 @@
     </label>
     @if (ttsCustomVoice()) {
       <span class="dev-voice-name" [title]="ttsCustomVoice()">{{ ttsCustomVoice() }}</span>
-    } @else if (ttsUploadStatus() === 'error') {
+    }
+    @if (ttsUploadWarning()) {
+      <span
+        class="dev-voice-name dev-voice-error"
+        [title]="ttsUploadWarning()"
+        data-testid="tts-voice-upload-warning"
+      >
+        ⚠ not on Chatterbox yet
+      </span>
+    } @else if (!ttsCustomVoice() && ttsUploadStatus() === 'error') {
       <span class="dev-voice-name dev-voice-error">Upload failed ✗</span>
     }
   }

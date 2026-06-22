@@ -216,6 +216,16 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   /** Filename returned by the dev-server after a voice file is uploaded */
   readonly ttsCustomVoice = signal('');
   readonly ttsUploadStatus = signal<'idle' | 'uploading' | 'done' | 'error'>('idle');
+  /**
+   * Set when the dev-server saved the file locally but could NOT upload it to
+   * the real Chatterbox server (chatterboxUpload.ok === false) — e.g.
+   * Chatterbox isn't running, or CHATTERBOX_TTS_URL/the saved chatterbox.ttsUrl
+   * points at the wrong place. ttsCustomVoice still gets set in this case (the
+   * local copy did succeed), but generating narration with it WILL 404 against
+   * Chatterbox until this is resolved — surfaced here instead of silently
+   * showing "done ✓" for a voice that doesn't actually work yet.
+   */
+  readonly ttsUploadWarning = signal<string | null>(null);
   readonly ttsForce = signal(false);
 
   private scripts = inject(ScriptRunnerService);
@@ -238,12 +248,27 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
     if (!file) return;
     this.ttsUploadStatus.set('uploading');
     this.ttsCustomVoice.set('');
+    this.ttsUploadWarning.set(null);
     this.scripts.uploadVoice(file).subscribe({
       next: (r) => {
         this.ttsCustomVoice.set(r.voice);
-        this.ttsUploadStatus.set('done');
+        // chatterboxUpload.ok === false means the file was saved locally but
+        // never actually reached the Chatterbox server — using this filename
+        // for narration will 404 until that's fixed. Don't report "done ✓"
+        // for that case; surface the warning instead so it isn't a silent
+        // trap the user only discovers after Generate Narration fails.
+        if (r.chatterboxUpload && r.chatterboxUpload.ok === false) {
+          this.ttsUploadWarning.set(r.warning ?? r.chatterboxUpload.error);
+          this.ttsUploadStatus.set('error');
+        } else {
+          this.ttsUploadWarning.set(null);
+          this.ttsUploadStatus.set('done');
+        }
       },
-      error: () => this.ttsUploadStatus.set('error'),
+      error: () => {
+        this.ttsUploadWarning.set(null);
+        this.ttsUploadStatus.set('error');
+      },
     });
   }
 
