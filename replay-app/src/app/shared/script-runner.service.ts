@@ -28,6 +28,25 @@ export type NarrationProgress = {
   failed?: number;
 };
 
+// Mirrors dev-server.mjs's GET /api/video/progress response shape (itself
+// built by applyVideoProgressEvent() from playwright-export.mjs's
+// "__PROGRESS__ {...}" stdout lines: 'render' while screenshotting frames,
+// 'audio-mux' while mixing narration clips, 'encode' for the final ffmpeg
+// pass, then the run settles into 'done'/'failed' via state.status rather
+// than a further phase change). Polled while videoStatus === 'running', same
+// pattern as NarrationProgress above.
+export type VideoExportPhase = 'render' | 'audio-mux' | 'encode' | 'done' | 'failed' | null;
+
+export type VideoProgress = {
+  status: 'idle' | 'running' | 'done' | 'error';
+  phase: VideoExportPhase;
+  frame: number;
+  frameCount: number | null;
+  clipCount?: number;
+  outPath?: string;
+  error?: string;
+};
+
 // Mirrors dev-server.mjs's maskTtsConfig() shape exactly — the real
 // ElevenLabs API key never appears here, only `hasApiKey`. See ADR-014.
 export type TtsConfig = {
@@ -100,6 +119,12 @@ export class ScriptRunnerService {
 
   exportVideo(scenario: string, narration: 'short' | 'long' | 'off' = 'short', fps = 30): Observable<ScriptResult> {
     return this.http.post<ScriptResult>(`${DEV_SERVER}/api/video`, { scenario, narration, fps });
+  }
+
+  getVideoProgress(scenario: string): Observable<VideoProgress> {
+    return this.http.get<VideoProgress>(`${DEV_SERVER}/api/video/progress`, {
+      params: { scenario },
+    });
   }
 
   runCapture(scenario: string, headed: boolean): Observable<ScriptResult> {

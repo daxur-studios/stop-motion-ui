@@ -163,6 +163,13 @@ async function main() {
 
     const frameCount = Math.max(1, Math.ceil((totalDurationMs / 1000) * fps));
     console.log(`[playwright-export] ${frameCount} frames @ ${fps}fps (${Math.round(totalDurationMs)}ms total)`);
+    // Mirrors generate-narration.mjs's "__PROGRESS__ {...}" stdout convention
+    // (see dev-server.mjs's applyProgressEvent()/startNarrationProgress(),
+    // now mirrored here by applyVideoProgressEvent()/startVideoProgress()) so
+    // the dev UI can show a live frame-render progress bar + phase indicator
+    // the same way it already does for TTS generation, instead of this
+    // output only ever being visible in the dev-server's own terminal.
+    console.log(`__PROGRESS__ ${JSON.stringify({ phase: 'render', frame: 0, frameCount })}`);
 
     const canvas = page.locator('#stage');
 
@@ -170,9 +177,13 @@ async function main() {
       const t = (i / fps) * 1000;
       await page.evaluate((t) => window['__stopMotion'].seekTo(t), t);
       await canvas.screenshot({ path: path.join(framesDir, `frame_${String(i).padStart(5, '0')}.png`) });
-      if (i % fps === 0) process.stdout.write(`\r  frame ${i}/${frameCount}`);
+      if (i % fps === 0) {
+        process.stdout.write(`\r  frame ${i}/${frameCount}`);
+        console.log(`__PROGRESS__ ${JSON.stringify({ phase: 'render', frame: i, frameCount })}`);
+      }
     }
     process.stdout.write(`\r  frame ${frameCount}/${frameCount}\n`);
+    console.log(`__PROGRESS__ ${JSON.stringify({ phase: 'render', frame: frameCount, frameCount })}`);
 
     await browser.close();
     browser = undefined;
@@ -180,7 +191,8 @@ async function main() {
     // --- Stage 2a: mix narration clips into one audio track ---
     const audioPath = path.join(workDir, 'audio_mixed.wav');
     if (audioEvents.length > 0) {
-      const inputArgs = audioEvents.flatMap((a) => ['-i', path.join(scenarioDir, a.path)]);
+      console.log(`__PROGRESS__ ${JSON.stringify({ phase: 'audio-mux', clipCount: audioEvents.length })}`);
+      const inputArgs = audioEvents.flatMap((a) => ['-i', resolveAudioPath(scenarioDir, a.path)]);
       const delays = audioEvents.map((a, i) => `[${i}]adelay=${Math.round(a.startMs)}|${Math.round(a.startMs)}[a${i}]`);
       const mixInputs = audioEvents.map((_, i) => `[a${i}]`).join('');
       const filterComplex = `${delays.join(';')};${mixInputs}amix=inputs=${audioEvents.length}:duration=longest:normalize=0[aout]`;
@@ -194,6 +206,7 @@ async function main() {
     }
 
     // --- Stage 2b: final encode (settings matched to Daxur-Daemon compress.ts) ---
+    console.log(`__PROGRESS__ ${JSON.stringify({ phase: 'encode' })}`);
     const videoArgs = [
       '-y',
       '-framerate', String(fps),
@@ -207,6 +220,7 @@ async function main() {
     );
     await run(ffmpeg, videoArgs);
 
+    console.log(`__PROGRESS__ ${JSON.stringify({ phase: 'done', outPath })}`);
     console.log(`\n[playwright-export] Done: ${outPath}`);
   } finally {
     if (browser) await browser.close().catch(() => {});
@@ -216,5 +230,6 @@ async function main() {
 
 main().catch((err) => {
   console.error('\n[playwright-export] failed:', err.message || err);
+  console.log(`__PROGRESS__ ${JSON.stringify({ phase: 'failed', error: err.message || String(err) })}`);
   process.exit(1);
 });

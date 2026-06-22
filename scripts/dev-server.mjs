@@ -58,17 +58,16 @@ function applyProgressEvent(state, evt) {
   }
 }
 
-// Wires a fresh progress snapshot for `scenario` and returns an
-// onStdoutChunk callback (for runProcess) that tails the child process's
-// stdout, buffering across chunk boundaries (a "__PROGRESS__ {...}" line can
-// arrive split across two `data` events), and applies any well-formed
-// progress lines it finds to that snapshot as they're emitted — i.e. live,
-// while generate-narration.mjs is still running, not just after it exits.
-function startNarrationProgress(scenario) {
-  const state = { status: "running", total: null, clips: [], startedAt: Date.now(), updatedAt: Date.now() };
-  narrationProgress.set(scenario, state);
+// Generic "__PROGRESS__ {...}" stdout tailer — buffers across chunk
+// boundaries (a line can arrive split across two `data` events) and hands
+// each well-formed JSON progress line to `onEvent` as it's emitted, i.e.
+// live while the child process is still running, not just after it exits.
+// Shared by startNarrationProgress() (generate-narration.mjs) and
+// startVideoProgress() (playwright-export.mjs) below, since both scripts
+// emit the same "__PROGRESS__ <json>\n" convention.
+function makeProgressTailer(onEvent) {
   let buf = "";
-  const onStdoutChunk = (text) => {
+  return (text) => {
     buf += text;
     let idx;
     while ((idx = buf.indexOf("\n")) !== -1) {
@@ -77,12 +76,60 @@ function startNarrationProgress(scenario) {
       const m = line.match(/^__PROGRESS__ (.+)$/);
       if (!m) continue;
       try {
-        applyProgressEvent(state, JSON.parse(m[1]));
+        onEvent(JSON.parse(m[1]));
       } catch {
         // Malformed progress line — ignore, rest of the run is unaffected.
       }
     }
   };
+}
+
+// Wires a fresh progress snapshot for `scenario` and returns an
+// onStdoutChunk callback (for runProcess) that applies generate-narration.mjs's
+// progress lines to that snapshot as they're emitted.
+function startNarrationProgress(scenario) {
+  const state = { status: "running", total: null, clips: [], startedAt: Date.now(), updatedAt: Date.now() };
+  narrationProgress.set(scenario, state);
+  const onStdoutChunk = makeProgressTailer((evt) => applyProgressEvent(state, evt));
+  return { state, onStdoutChunk };
+}
+
+// In-memory video-export progress, per scenario — same last-write-wins,
+// never-persisted convention as narrationProgress above. Populated by
+// tailing playwright-export.mjs's stdout for "__PROGRESS__ " lines (see that
+// script's render-loop / audio-mux / encode phase comments).
+const videoProgress = new Map();
+
+function applyVideoProgressEvent(state, evt) {
+  state.updatedAt = Date.now();
+  state.phase = evt.phase;
+  if (evt.phase === "render") {
+    state.frame = evt.frame;
+    state.frameCount = evt.frameCount;
+  } else if (evt.phase === "audio-mux") {
+    state.clipCount = evt.clipCount;
+  } else if (evt.phase === "done") {
+    state.outPath = evt.outPath;
+  } else if (evt.phase === "failed") {
+    state.error = evt.error;
+  }
+}
+
+// Same wiring pattern as startNarrationProgress() above, for
+// playwright-export.mjs's phases: 'render' (frame N/M), 'audio-mux'
+// (mixing narration clips), 'encode' (final ffmpeg pass), then 'done' or
+// 'failed'.
+function startVideoProgress(scenario) {
+  const state = {
+    status: "running",
+    phase: "render",
+    frame: 0,
+    frameCount: null,
+    startedAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  videoProgress.set(scenario, state);
+  const onStdoutChunk = makeProgressTailer((evt) => applyVideoProgressEvent(state, evt));
   return { state, onStdoutChunk };
 }
 
@@ -458,6 +505,16 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // GET /api/video/progress?scenario=NAME — current in-memory progress
+    // snapshot for that scenario's most recent (or in-flight) video export.
+    // Same polling convention as /api/narration/progress above.
+    if (req.url?.startsWith("/api/video/progress")) {
+      const scenario = new URL(req.url, `http://localhost:${PORT}`).searchParams.get("scenario");
+      const state = scenario ? videoProgress.get(scenario) : null;
+      respond(res, 200, state ?? { status: "idle", phase: null, frame: 0, frameCount: null });
+      return;
+    }
+
     // Serve generated narration audio from the gitignored ignore/audio/ tree.
     // GET /narration/{scenario}/{filename} — used by the Angular app when audio
     // was generated with --audio-dir so files live outside Angular's public/ dir.
@@ -616,7 +673,15 @@ const server = createServer(async (req, res) => {
     const outPath = path.join(dir, "export.mp4");
     // playwright-export.mjs drives the Angular canvas directly — no Python/Pillow
     // or ffprobe needed. Angular dev server must be running at localhost:4221.
-    const result = await runProcess("node", [path.join(SCRIPTS_DIR, "playwright-export.mjs"), scenario, `--narration=${narration}`, `--fps=${fps}`, `--out=${outPath}`], `Video export for ${scenario}`);
+    const { state, onStdoutChunk } = startVideoProgress(scenario);
+    const result = await runProcess(
+      "node",
+      [path.join(SCRIPTS_DIR, "playwright-export.mjs"), scenario, `--narration=${narration}`, `--fps=${fps}`, `--out=${outPath}`],
+      `Video export for ${scenario}`,
+      { onStdoutChunk },
+    );
+    state.status = result.ok ? "done" : "error";
+    state.finishedAt = Date.now();
     respond(res, result.ok ? 200 : 500, result);
     return;
   }
@@ -661,6 +726,7 @@ server.listen(PORT, () => {
   console.log(`[dev-server] GET  /api/narration/progress?scenario=scenario-1  -> { status, total, clips: [...] }`);
   console.log(`[dev-server] POST /api/voices/upload  { filename: "my.mp3", data: "<base64>" }`);
   console.log(`[dev-server] POST /api/video          { scenario: "scenario-1", narration?: "short"|"long"|"off", fps?: 30 }`);
+  console.log(`[dev-server] GET  /api/video/progress?scenario=scenario-1      -> { status, phase, frame, frameCount, ... }`);
   console.log(`[dev-server] Voices (local):      ${LOCAL_VOICES_DIR}  (override with LOCAL_VOICES_DIR)`);
   console.log(`[dev-server] Voice uploads go to Chatterbox via its own HTTP API (CHATTERBOX_TTS_URL / saved chatterbox.ttsUrl) — not a local directory mirror.`);
   console.log(`[dev-server] Narration audio dir: ${NARRATION_DIR}  (override with NARRATION_DIR)`);

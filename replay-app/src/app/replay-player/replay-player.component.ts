@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import type { Manifest } from '@shared/manifest-types';
-import { NarrationProgress, ScriptRunnerService } from '../shared/script-runner.service';
+import { NarrationProgress, ScriptRunnerService, VideoProgress } from '../shared/script-runner.service';
 
 // Stop-Motion UI — Replay player, Angular port.
 //
@@ -238,6 +238,16 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   readonly ttsProgress = signal<NarrationProgress | null>(null);
   private ttsProgressPollHandle: ReturnType<typeof setInterval> | null = null;
 
+  /**
+   * Frame-render / audio-mux / encode progress for the currently/most-recently
+   * running video export — polled from GET /api/video/progress while
+   * videoStatus() === 'running' (see startVideoProgressPolling()), mirroring
+   * the ttsProgress pattern above. null while idle / before the first poll
+   * response arrives.
+   */
+  readonly videoProgress = signal<VideoProgress | null>(null);
+  private videoProgressPollHandle: ReturnType<typeof setInterval> | null = null;
+
   private scripts = inject(ScriptRunnerService);
 
   generateNarration(): void {
@@ -339,10 +349,78 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   exportVideo(): void {
     if (this.videoStatus() === 'running') return;
     this.videoStatus.set('running');
-    this.scripts.exportVideo(this.scenario(), this.narrationMode()).subscribe({
-      next: (r) => this.videoStatus.set(r.ok ? 'done' : 'error'),
-      error: () => this.videoStatus.set('error'),
+    this.videoProgress.set(null);
+    const scenario = this.scenario();
+    this.startVideoProgressPolling(scenario);
+    this.scripts.exportVideo(scenario, this.narrationMode()).subscribe({
+      next: (r) => {
+        this.videoStatus.set(r.ok ? 'done' : 'error');
+        // One last poll right away so the final phase (done/failed) shows up
+        // without waiting for the next tick.
+        this.pollVideoProgressOnce(scenario);
+        this.stopVideoProgressPolling();
+      },
+      error: () => {
+        this.videoStatus.set('error');
+        this.stopVideoProgressPolling();
+      },
     });
+  }
+
+  /** Polls GET /api/video/progress every 500ms until stopVideoProgressPolling() is called. */
+  private startVideoProgressPolling(scenario: string): void {
+    this.stopVideoProgressPolling();
+    this.pollVideoProgressOnce(scenario);
+    this.videoProgressPollHandle = setInterval(() => this.pollVideoProgressOnce(scenario), 500);
+  }
+
+  private pollVideoProgressOnce(scenario: string): void {
+    this.scripts.getVideoProgress(scenario).subscribe({
+      next: (p) => this.videoProgress.set(p),
+      // A single failed poll shouldn't disrupt the actual export request in
+      // flight — just skip this tick and try again on the next.
+      error: () => {},
+    });
+  }
+
+  private stopVideoProgressPolling(): void {
+    if (this.videoProgressPollHandle != null) {
+      clearInterval(this.videoProgressPollHandle);
+      this.videoProgressPollHandle = null;
+    }
+  }
+
+  /** True once the export has reported at least one phase — used to show/hide the progress panel. */
+  videoProgressVisible(): boolean {
+    const p = this.videoProgress();
+    return this.videoStatus() === 'running' && !!p && p.phase != null;
+  }
+
+  /** Frame-render percent (0 while frameCount is unknown or in the audio-mux/encode phases). */
+  videoProgressPercent(): number {
+    const p = this.videoProgress();
+    if (!p || !p.frameCount) return 0;
+    return Math.round((p.frame / p.frameCount) * 100);
+  }
+
+  /** Human-readable label for the current export phase, for the progress panel. */
+  videoProgressPhaseLabel(): string {
+    const p = this.videoProgress();
+    if (!p || !p.phase) return '';
+    switch (p.phase) {
+      case 'render':
+        return `Rendering frames (${p.frame}/${p.frameCount ?? '?'})`;
+      case 'audio-mux':
+        return `Mixing narration audio (${p.clipCount ?? 0} clip${p.clipCount === 1 ? '' : 's'})`;
+      case 'encode':
+        return 'Encoding final video';
+      case 'done':
+        return 'Done';
+      case 'failed':
+        return `Failed${p.error ? ': ' + p.error : ''}`;
+      default:
+        return '';
+    }
   }
 
   runCapture(): void {

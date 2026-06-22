@@ -212,6 +212,44 @@
     @else { Export Video }
   </button>
 
+  @if (videoProgressVisible()) {
+    <div class="tts-progress-modal" role="status" aria-live="polite" data-testid="video-progress-modal">
+      <div class="tts-progress-header">
+        <span>{{ videoProgressPhaseLabel() }}</span>
+      </div>
+      <div class="tts-progress-bar-track">
+        <div class="tts-progress-bar-fill" [style.width.%]="videoProgressPercent()"></div>
+      </div>
+      <ul class="tts-progress-list">
+        <li
+          class="tts-progress-item"
+          [class]="
+            'tts-clip-' +
+            (videoProgress()?.phase === 'done'
+              ? 'done'
+              : videoProgress()?.phase === 'failed'
+                ? 'failed'
+                : videoProgress()?.phase
+                  ? 'running'
+                  : 'pending')
+          "
+        >
+          <span class="tts-clip-icon">
+            @switch (videoProgress()?.phase) {
+              @case ('render') { ⏳ }
+              @case ('audio-mux') { ⏳ }
+              @case ('encode') { ⏳ }
+              @case ('done') { ✓ }
+              @case ('failed') { ✗ }
+              @default { ○ }
+            }
+          </span>
+          <span class="tts-clip-label">{{ videoProgressPhaseLabel() }}</span>
+        </li>
+      </ul>
+    </div>
+  }
+
   <span class="dev-tools-hint">
     Requires <code>node scripts/dev-server.mjs</code> running in a separate terminal.
   </span>
