@@ -10,9 +10,12 @@
   padding: 14px 0 0;
 
   a {
-    background: #2a2a2a;
-    color: #999;
-    border: 1px solid #3a3a3a;
+    // Material 3 surface/role tokens (see src/app/theme/) instead of
+    // hand-picked grays — tracks whichever of light/dark mat.theme() is
+    // active. See ADR-015.
+    background: var(--mat-sys-surface-container);
+    color: var(--mat-sys-on-surface-variant);
+    border: 1px solid var(--mat-sys-outline-variant);
     border-radius: 6px;
     padding: 6px 14px;
     cursor: pointer;
@@ -21,13 +24,13 @@
     display: inline-block;
 
     &:hover {
-      background: #333;
+      background: var(--mat-sys-surface-container-high);
     }
 
     &.active {
-      background: #3a3a3a;
-      color: #ddd;
-      border-color: #555;
+      background: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+      border-color: var(--mat-sys-outline);
     }
   }
 }

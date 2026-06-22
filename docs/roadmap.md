@@ -14,17 +14,33 @@ See also: [`docs/agent-maintainability.md`](./agent-maintainability.md) — what
 
 ## Feature: TTS narration for replays — ✅ Done
 
-- Uses Daxur Daemon's local TTS capability (Chatterbox TTS) to generate spoken narration for replay sequences
+- Generates spoken narration for replay sequences via a pluggable TTS provider — **Chatterbox** (local/free, self-hosted, default) or **ElevenLabs** (cloud/paid, just an API key, no local server or LAN setup needed) — selected via `TTS_PROVIDER=chatterbox|elevenlabs`. See ADR-013.
 - Two variants per event: a short version (concise) and a long version (detailed walkthrough) — `narrationShort` / `narrationLong` text fields on each manifest event
 - Audio is pre-generated and cached via `scripts/generate-narration.mjs` (not generated live in-browser) into `narrationAudioShort` / `narrationAudioLong` manifest fields
 - Implemented in both `replay/player.js` and `replay-app`'s `ReplayPlayerComponent`; narration on/off/short/long is a dropdown in both players
 - See ADR-004 for the timing-sync and playback-speed decisions
-- Cached narration clips are compressed Ogg/Opus (`.ogg`), not WAV — Chatterbox's OpenAI-compatible endpoint encodes Opus natively server-side, so no transcode step was needed. See ADR-008
+- Cached narration clips are compressed Ogg/Opus (`.ogg`), not WAV — both providers encode Opus natively (Chatterbox via its OpenAI-compatible endpoint, ElevenLabs via `output_format=opus_48000_64`), so no transcode step is needed either way. See ADR-008 (Chatterbox) and ADR-013 (ElevenLabs).
 
 ### Timing sync — resolved
 
 - Per step, duration = whichever is longer (visual action vs narration audio) — an extra hold phase is appended after the visual action if narration runs longer, so playback always waits for both before advancing
 - Playback speed (0.5x–2x) applies uniformly to narration audio via `playbackRate`, matching the visual timeline; this is not pitch-corrected (see ADR-004 for why that's an acceptable tradeoff here)
+
+## Feature: TTS settings UI — ✅ Done
+
+- Adds an in-app Settings panel (`replay-app`, routed at `/settings`) for choosing the TTS provider and entering credentials, instead of requiring environment variables. See ADR-014.
+- New local config file: `.local-tts-config.json` at repo root (gitignored), read/written by `scripts/dev-server.mjs`. Takes precedence over the `TTS_PROVIDER`/`CHATTERBOX_TTS_URL`/`ELEVENLABS_API_KEY` env vars from ADR-013, which remain fully supported as a fallback (CI, terminal-only use).
+- `provider` is independent state, never inferred from "does a key exist" — switching providers doesn't require clearing the other provider's saved credentials.
+- The ElevenLabs API key never round-trips to the browser: `GET /api/tts-config` only ever returns `hasApiKey: boolean`; the Settings form's key field is write-only and POSTs a freshly-typed key exactly once. ElevenLabs' voice list is fetched server-side (`GET /api/tts-config/elevenlabs-voices`) rather than from the browser directly, avoiding both CORS and a second key-exposure path. Chatterbox's voice list (`GET /v1/audio/voices`, confirmed against the server's own source) is proxied the same way for UI consistency, though it carries no credential.
+- Verified via `node --check` (both touched `.mjs` files) and, going further than originally planned, the actual Angular template compiler (`ngc -p tsconfig.app.json --noEmit`) — caught one real bug (template expressions can't use arrow functions) before shipping. No live browser/dev-server run was possible in this sandbox; see ADR-014's Consequences for the exact verification boundary.
+
+## Feature: Material 3 theming via pinned recipe — ✅ Done
+
+- Fixed `replay-app` rendering as a mix of dark app chrome + light Material form controls (most visible on the new Settings panel above) — root cause was `src/styles.scss` importing `@angular/material/prebuilt-themes/indigo-pink.css` (a fixed light Material 2 theme) underneath hand-coded dark `body` colors. See ADR-015.
+- Adopted the theming convention prescribed by this user's own scaffolding tool, `Daxur-Daemon/cli/src/scaffold/recipes/angular-firebase-20/AGENT.md`: Angular Material 3 via `mat.theme()`, a `src/app/theme/` folder (`theme.scss`, `_theme-colors.scss`, `snackbar.scss`, `theme.service.ts`) copied verbatim from a pinned reference repo rather than hand-rolled, with a `ThemeService` toggling `app-light-theme`/`app-dark-theme` on `<html>`.
+- All custom component SCSS (`app.scss`, `settings.component.scss`, `kitchen-sink.component.scss`, `demo-gallery.component.scss`, `replay-player.component.scss`) converted from hand-picked hex grays to `--mat-sys-*` design tokens, so custom chrome and Material controls now track the same theme.
+- **This is now the standard theming convention for all future UI work in this repo** — see ADR-015's Consequences.
+- Verified via `ngc -p tsconfig.app.json --noEmit` and `tsc -p tsconfig.app.json --noEmit` (both clean). No live browser render check possible in this sandbox — see ADR-015's verification disclosure.
 
 ## Feature: Seeded deterministic cursor noise — ✅ Done
 

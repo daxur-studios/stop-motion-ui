@@ -1,0 +1,28 @@
+// Copied verbatim from the pinned reference (per
+// Daxur-Daemon/cli/src/scaffold/recipes/angular-firebase-20/AGENT.md):
+//   meowney (sibling project) @ b7cb672c1a0c0ee8aaef22b97823fb4b7bc81f7c
+//   src/app/theme/snackbar.scss
+// Not currently used by replay-app (no MatSnackBar usage yet), kept for
+// parity with the recipe's file set and ready if a snackbar is added later.
+.mat-mdc-snack-bar-container {
+  &.snackbar-error {
+    --mdc-snackbar-container-color: var(--mat-sys-error);
+    --mat-mdc-snack-bar-button-color: var(--mat-sys-on-error);
+    --mdc-snackbar-supporting-text-color: var(--mat-sys-on-error);
+  }
+  &.snackbar-success {
+    --mdc-snackbar-container-color: var(--mat-sys-secondary);
+    --mat-mdc-snack-bar-button-color: var(--mat-sys-on-secondary);
+    --mdc-snackbar-supporting-text-color: var(--mat-sys-on-secondary);
+  }
+  &.snackbar-info {
+    --mdc-snackbar-container-color: var(--mat-sys-tertiary);
+    --mat-mdc-snack-bar-button-color: var(--mat-sys-on-tertiary);
+    --mdc-snackbar-supporting-text-color: var(--mat-sys-on-tertiary);
+  }
+  &.snackbar-warning {
+    --mdc-snackbar-container-color: var(--mat-sys-error-container);
+    --mat-mdc-snack-bar-button-color: var(--mat-sys-on-error-container);
+    --mdc-snackbar-supporting-text-color: var(--mat-sys-on-error-container);
+  }
+}

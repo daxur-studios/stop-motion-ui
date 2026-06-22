@@ -1,13 +1,20 @@
-// Angular Material structural + theme CSS, required for mat-select's overlay
-// panel, mat-dialog's backdrop, and mat-progress-bar/-spinner — added for the
-// kitchen-sink demo page (replay-app/src/app/kitchen-sink/). Prebuilt CSS
-// import rather than the newer `@use '@angular/material' as mat; @include
-// mat.theme(...)` Sass API — simpler, fewer moving parts to get wrong without
-// being able to compile-check this locally (no network/install access in the
-// environment that wrote this; see PR notes). Swap for the Sass theming API
-// later if the rest of the app adopts custom M3 theming.
+// Angular Material structural CSS — required for mat-select's overlay panel,
+// mat-dialog's backdrop, etc. Still imported as prebuilt CSS (no Sass
+// equivalent needed for pure structural/positioning rules).
 @import '@angular/cdk/overlay-prebuilt.css';
-@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+// Angular Material 3 theme (mat.theme() Sass API + light/dark palette +
+// ThemeService class toggling) — see src/app/theme/. This replaces the old
+// `@import '@angular/material/prebuilt-themes/indigo-pink.css'` (a fixed
+// *light* Material 2 theme) that used to sit underneath this file's
+// hand-coded dark `body` colors below. That mismatch was why Material form
+// controls (mat-select, mat-form-field/mat-input, mat-radio-group) rendered
+// with light-theme chrome — white backgrounds, dark-on-light text — inside
+// an otherwise dark app, most visibly in the Settings panel. See ADR-015.
+//
+// Follows the pattern prescribed by
+// Daxur-Daemon/cli/src/scaffold/recipes/angular-firebase-20/AGENT.md.
+@use 'app/theme/theme.scss';
 
 html,
 body {
@@ -17,6 +24,8 @@ body {
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background: #111;
-  color: #eee;
+  // background/color now come from theme.scss's own `body { ... }` rule
+  // (var(--mat-sys-surface) / var(--mat-sys-on-surface)), which tracks
+  // whichever of the light/dark mat.theme() blocks is active instead of
+  // being hardcoded here independently of the Material theme.
 }

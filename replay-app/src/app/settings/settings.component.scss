@@ -1,0 +1,99 @@
+// Color values below use Angular Material 3 system tokens (--mat-sys-*,
+// defined by src/app/theme/theme.scss's mat.theme() include) instead of
+// hand-picked hex grays, so this card's chrome tracks whichever of
+// light/dark is active and stays in sync with the Material form controls
+// (mat-select, mat-form-field/mat-input, mat-radio-group) used throughout
+// this template — see ADR-015 for why (this was the most visibly broken
+// "light inputs in a dark app" surface before the fix).
+:host {
+  display: block;
+  max-width: 640px;
+  margin: 0 auto 40px;
+  padding: 0 16px;
+  font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--mat-sys-on-surface);
+}
+
+h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface);
+  margin: 0 0 10px;
+}
+
+h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface-variant);
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.settings-section {
+  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+mat-form-field {
+  display: block;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.settings-voice-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+
+  mat-form-field {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+mat-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+p {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.settings-hint {
+  color: var(--mat-sys-on-surface-variant);
+  margin: 4px 0 12px;
+}
+
+.settings-error {
+  color: var(--mat-sys-error);
+  margin: 4px 0 0;
+}
+
+.settings-save-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.settings-feedback {
+  margin: 0;
+}
+
+// M3 doesn't define a "success" role token, so this stays a literal color
+// rather than an invented ad-hoc token — an intentional, documented
+// exception to the "no hand-rolled colors" rule, not an oversight.
+.settings-feedback-success {
+  color: #80e080;
+}
+
+.settings-feedback-error {
+  color: var(--mat-sys-error);
+}

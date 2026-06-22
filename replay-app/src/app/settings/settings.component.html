@@ -1,0 +1,191 @@
+<section class="settings-section" data-testid="settings-intro">
+  <h2>TTS Settings</h2>
+  <p>
+    Choose which text-to-speech provider <code>npm run narrate</code> / the
+    Replay Player's "Generate Narration" button use, and the credentials for
+    each. Saved here via the dev-server to <code>.local-tts-config.json</code>
+    (gitignored) — this takes precedence over the <code>TTS_PROVIDER</code> /
+    <code>CHATTERBOX_TTS_URL</code> / <code>ELEVENLABS_API_KEY</code>
+    environment variables when present. See
+    <code>docs/adr/ADR-014-tts-settings-ui.md</code>.
+  </p>
+</section>
+
+@if (loading()) {
+  <section class="settings-section" data-testid="settings-loading">
+    <mat-spinner [diameter]="32"></mat-spinner>
+    <p>Loading current settings…</p>
+  </section>
+} @else {
+  <section class="settings-section" data-testid="settings-provider-section">
+    <h3>Active provider</h3>
+    <mat-radio-group
+      data-testid="settings-provider-group"
+      [value]="provider()"
+      (change)="selectProvider($any($event).value)"
+    >
+      <mat-radio-button value="chatterbox" data-testid="settings-provider-chatterbox">
+        Chatterbox (local, free)
+      </mat-radio-button>
+      <mat-radio-button value="elevenlabs" data-testid="settings-provider-elevenlabs">
+        ElevenLabs (cloud, paid)
+      </mat-radio-button>
+    </mat-radio-group>
+    <p class="settings-hint">
+      Switching this does not require credentials for the other provider —
+      whatever you've saved for Chatterbox or ElevenLabs below just sits
+      there unused until you switch back to it.
+    </p>
+  </section>
+
+  <section class="settings-section" data-testid="settings-chatterbox-section">
+    <h3>Chatterbox settings</h3>
+
+    <mat-form-field>
+      <mat-label>Chatterbox TTS URL</mat-label>
+      <input
+        matInput
+        type="text"
+        placeholder="http://localhost:8004/v1/audio/speech"
+        data-testid="settings-chatterbox-url"
+        [value]="chatterboxTtsUrl()"
+        (input)="onChatterboxTtsUrlInput($any($event.target).value)"
+      />
+    </mat-form-field>
+
+    <div class="settings-voice-row">
+      <mat-form-field>
+        <mat-label>Voice</mat-label>
+        <mat-select data-testid="settings-chatterbox-voice" [(value)]="chatterboxVoiceId">
+          @if (chatterboxVoiceId() && !chatterboxVoices().includes(chatterboxVoiceId())) {
+            <mat-option [value]="chatterboxVoiceId()">{{ chatterboxVoiceId() }} (saved)</mat-option>
+          }
+          @for (voice of chatterboxVoices(); track voice) {
+            <mat-option [value]="voice" [attr.data-testid]="'settings-chatterbox-voice-option-' + voice">
+              {{ voice }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <button
+        mat-stroked-button
+        type="button"
+        data-testid="settings-chatterbox-refresh-voices"
+        [disabled]="chatterboxVoicesLoading()"
+        (click)="loadChatterboxVoices()"
+      >
+        {{ chatterboxVoicesLoading() ? 'Loading…' : 'Refresh voices' }}
+      </button>
+    </div>
+
+    @if (chatterboxVoicesError()) {
+      <p class="settings-error" data-testid="settings-chatterbox-voices-error">
+        {{ chatterboxVoicesError() }}
+      </p>
+    }
+  </section>
+
+  <section class="settings-section" data-testid="settings-elevenlabs-section">
+    <h3>ElevenLabs settings</h3>
+
+    <mat-form-field>
+      <mat-label>API key</mat-label>
+      <input
+        matInput
+        type="password"
+        autocomplete="off"
+        [placeholder]="elevenlabsHasApiKey() ? 'A key is already saved — leave blank to keep it' : 'sk_...'"
+        data-testid="settings-elevenlabs-api-key"
+        [value]="elevenlabsApiKeyInput()"
+        (input)="onElevenlabsApiKeyInput($any($event.target).value)"
+      />
+    </mat-form-field>
+    <p class="settings-hint" data-testid="settings-elevenlabs-key-status">
+      @if (elevenlabsHasApiKey()) {
+        A key is currently saved (never shown here once saved — type a new
+        one to replace it).
+        <button
+          mat-button
+          type="button"
+          color="warn"
+          data-testid="settings-elevenlabs-clear-key"
+          [disabled]="saving()"
+          (click)="clearSavedApiKey()"
+        >
+          Remove saved key
+        </button>
+      } @else {
+        No key saved yet.
+      }
+    </p>
+
+    <mat-form-field>
+      <mat-label>Model ID</mat-label>
+      <input
+        matInput
+        type="text"
+        placeholder="eleven_multilingual_v2"
+        data-testid="settings-elevenlabs-model-id"
+        [value]="elevenlabsModelId()"
+        (input)="onElevenlabsModelIdInput($any($event.target).value)"
+      />
+    </mat-form-field>
+
+    <div class="settings-voice-row">
+      <mat-form-field>
+        <mat-label>Voice</mat-label>
+        <mat-select data-testid="settings-elevenlabs-voice" [(value)]="elevenlabsVoiceId">
+          @if (elevenlabsVoiceId() && !isKnownElevenlabsVoice(elevenlabsVoiceId())) {
+            <mat-option [value]="elevenlabsVoiceId()">{{ elevenlabsVoiceId() }} (saved)</mat-option>
+          }
+          @for (voice of elevenlabsVoices(); track voice.voiceId) {
+            <mat-option [value]="voice.voiceId" [attr.data-testid]="'settings-elevenlabs-voice-option-' + voice.voiceId">
+              {{ voice.name }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <button
+        mat-stroked-button
+        type="button"
+        data-testid="settings-elevenlabs-refresh-voices"
+        [disabled]="elevenlabsVoicesLoading()"
+        (click)="loadElevenlabsVoices()"
+      >
+        {{ elevenlabsVoicesLoading() ? 'Loading…' : 'Refresh voices' }}
+      </button>
+    </div>
+
+    @if (elevenlabsVoicesError()) {
+      <p class="settings-error" data-testid="settings-elevenlabs-voices-error">
+        {{ elevenlabsVoicesError() }}
+      </p>
+    }
+  </section>
+
+  <section class="settings-section settings-save-section" data-testid="settings-save-section">
+    <button
+      mat-raised-button
+      color="primary"
+      type="button"
+      data-testid="settings-save-button"
+      [disabled]="saving()"
+      (click)="save()"
+    >
+      {{ saving() ? 'Saving…' : 'Save settings' }}
+    </button>
+
+    @if (saveFeedback()) {
+      <p
+        class="settings-feedback"
+        [class.settings-feedback-error]="saveFeedback()!.kind === 'error'"
+        [class.settings-feedback-success]="saveFeedback()!.kind === 'success'"
+        data-testid="settings-save-feedback"
+      >
+        {{ saveFeedback()!.message }}
+      </p>
+    }
+  </section>
+}

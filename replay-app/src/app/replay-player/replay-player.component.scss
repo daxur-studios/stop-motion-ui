@@ -1,7 +1,21 @@
+// See ADR-015 / src/app/theme/ — colors below use Material 3 system tokens
+// (--mat-sys-*) instead of hand-picked hex grays, tracking whichever of
+// light/dark mat.theme() is active.
+//
+// Deliberate exceptions, left as literal colors:
+// - #stage's background and :host.export-mode's background stay literal
+//   black. #stage is the replay canvas viewport (its own content paints
+//   over this), and export-mode specifically needs a fixed, theme-independent
+//   color so Playwright screenshots stay pixel-stable regardless of which
+//   theme is active when export runs.
+// - #dev-tools' tertiary-container tint intentionally looks different from
+//   the regular #controls bar (visually flags "dev-only" controls) — mapped
+//   to the M3 tertiary-container role rather than re-using surface-container,
+//   so it's still a real design token, just a different semantic role.
 :host {
   display: block;
-  background: #1e1e1e;
-  color: #ddd;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
   font-family: -apple-system, Segoe UI, Roboto, sans-serif;
   min-height: 100%;
 }
@@ -14,7 +28,7 @@ header {
 h1 {
   font-size: 16px;
   font-weight: normal;
-  color: #888;
+  color: var(--mat-sys-on-surface-variant);
   margin: 0;
 }
 
@@ -26,7 +40,7 @@ h1 {
 
 #stage {
   background: #000;
-  border: 1px solid #444;
+  border: 1px solid var(--mat-sys-outline);
   max-width: 90vw;
   height: auto;
 }
@@ -38,23 +52,23 @@ h1 {
   max-width: 900px;
   margin: 0 auto 24px;
   padding: 10px 14px;
-  background: #2a2a2a;
-  border: 1px solid #3a3a3a;
+  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 8px;
   flex-wrap: wrap;
 }
 
 button {
-  background: #3a3a3a;
-  color: #ddd;
-  border: 1px solid #4a4a4a;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+  border: 1px solid var(--mat-sys-outline);
   border-radius: 6px;
   padding: 6px 12px;
   cursor: pointer;
   font-size: 13px;
 
   &:hover {
-    background: #454545;
+    background: var(--mat-sys-surface-container-highest);
   }
 
   &:disabled {
@@ -69,9 +83,9 @@ input[type='range'] {
 }
 
 select {
-  background: #3a3a3a;
-  color: #ddd;
-  border: 1px solid #4a4a4a;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+  border: 1px solid var(--mat-sys-outline);
   border-radius: 6px;
   padding: 5px 8px;
   font-size: 13px;
@@ -79,7 +93,7 @@ select {
 
 #time-label {
   font-size: 12px;
-  color: #999;
+  color: var(--mat-sys-on-surface-variant);
   min-width: 90px;
   text-align: right;
   font-family: monospace;
@@ -88,7 +102,7 @@ select {
 #status {
   text-align: center;
   font-size: 12px;
-  color: #777;
+  color: var(--mat-sys-on-surface-variant);
   min-height: 18px;
 }
 
@@ -99,8 +113,8 @@ select {
   max-width: 900px;
   margin: 8px auto 24px;
   padding: 8px 14px;
-  background: #1e2430;
-  border: 1px solid #2e3a50;
+  background: var(--mat-sys-tertiary-container);
+  border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 8px;
   flex-wrap: wrap;
 }
@@ -109,25 +123,27 @@ select {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #556;
+  color: var(--mat-sys-on-tertiary-container);
   margin-right: 2px;
 }
 
 .dev-btn {
-  background: #253040;
-  border-color: #3a4a60;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  border-color: var(--mat-sys-outline);
   font-size: 12px;
   padding: 5px 12px;
 
   &:hover:not(:disabled) {
-    background: #2e3d52;
+    background: var(--mat-sys-tertiary);
+    color: var(--mat-sys-on-tertiary);
   }
 }
 
 .dev-tools-sep {
   width: 1px;
   height: 20px;
-  background: #2e3a50;
+  background: var(--mat-sys-outline-variant);
   margin: 0 2px;
 }
 
@@ -136,12 +152,12 @@ select {
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #99a;
+  color: var(--mat-sys-on-tertiary-container);
   cursor: pointer;
   user-select: none;
 
   input[type='checkbox'] {
-    accent-color: #4a7a9b;
+    accent-color: var(--mat-sys-tertiary);
     cursor: pointer;
   }
 }
@@ -157,43 +173,45 @@ select {
 
 .dev-voice-name {
   font-size: 11px;
-  color: #8ba;
+  color: var(--mat-sys-on-tertiary-container);
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 
   &.dev-voice-error {
-    color: #c66;
+    color: var(--mat-sys-error);
   }
 }
 
 .dev-select {
   font-size: 12px;
   padding: 4px 7px;
-  background: #253040;
-  border-color: #3a4a60;
-  color: #ccd;
+  background: var(--mat-sys-tertiary-container);
+  border-color: var(--mat-sys-outline);
+  color: var(--mat-sys-on-tertiary-container);
 }
 
 
 .dev-tools-hint {
   margin-left: auto;
   font-size: 11px;
-  color: #445;
+  color: var(--mat-sys-on-tertiary-container);
 
   code {
-    background: #1a1e28;
+    background: var(--mat-sys-surface-dim);
     padding: 1px 5px;
     border-radius: 3px;
     font-size: 11px;
-    color: #6a8;
+    color: var(--mat-sys-tertiary);
   }
 }
 
 // Playwright export mode — activated by ?export=1 URL param.
 // Hides all chrome so only the 1280×800 canvas is visible, and forces the
 // canvas to its exact pixel dimensions so screenshots are always 1280×800.
+// Background intentionally stays literal black (see file-level comment) —
+// export pixel output must not vary with the active theme.
 :host.export-mode {
   background: #000;
 

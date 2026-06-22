@@ -5,6 +5,20 @@
     <title>Stop-Motion UI — Replay (Angular)</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      Roboto + Material Icons — per
+      Daxur-Daemon/cli/src/scaffold/recipes/angular-firebase-20/AGENT.md
+      step 10. theme.scss's mat.theme() typography config specifies Roboto
+      as the brand/plain font family; without loading it, Material
+      components fall back to whatever the OS substitutes, which can look
+      inconsistent across machines. See ADR-015.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Material+Symbols+Outlined&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <app-root></app-root>

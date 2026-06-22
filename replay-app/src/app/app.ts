@@ -1,12 +1,17 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { BusyService } from './shared/busy.service';
+import { ThemeService } from './theme/theme.service';
 
 // App root — now routed via @angular/router (see ADR-007; supersedes
 // ADR-005's original "no router" decision, which said a third view would
 // be the trigger to revisit it). Nav is a row of routerLink anchors;
 // <router-outlet> renders whichever of Replay Player / Demo Gallery /
 // Kitchen Sink is active.
+//
+// ThemeService is injected (not just provided) so its constructor runs on
+// startup and applies the app-light-theme/app-dark-theme class to <html>
+// before first paint — see ADR-015 / src/app/theme/.
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -16,4 +21,5 @@ import { BusyService } from './shared/busy.service';
 })
 export class App {
   protected readonly busyService = inject(BusyService);
+  private readonly themeService = inject(ThemeService);
 }

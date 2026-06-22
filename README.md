@@ -40,8 +40,9 @@ Run from the repo root via `npm run <command>` (forwards to `scripts/cli.mjs` �
 
 - `npm run dev` — starts the Angular dev server (`:4221`) and the companion HTTP dev-server (`:3001`) together.
 - `npm run capture [-- --headed]` — runs the Playwright capture script.
-- `npm run narrate -- <scenario-dir> [...]` — generates narration audio for one scenario.
-- `npm run generate-narration` — generates narration audio for every scenario.
+- `npm run narrate -- <scenario-dir> [...]` — generates narration audio for one scenario. Uses Chatterbox (local, free) by default; set `TTS_PROVIDER=elevenlabs` plus `ELEVENLABS_API_KEY` to use ElevenLabs (cloud, paid) instead — no Chatterbox server or network setup needed in that case. See [`docs/adr/ADR-013-elevenlabs-tts-provider.md`](docs/adr/ADR-013-elevenlabs-tts-provider.md).
+- **TTS provider/credentials can also be set from the UI** instead of environment variables: open the Angular app (`npm run dev`) and go to **Settings** (`/settings`). Choose Chatterbox or ElevenLabs, fill in the relevant fields (ElevenLabs API key is write-only — never shown again once saved), and hit Save. This writes to a gitignored `.local-tts-config.json` at the repo root via the dev-server, which takes precedence over the `TTS_PROVIDER`/`CHATTERBOX_TTS_URL`/`ELEVENLABS_API_KEY` env vars above when present (env vars remain the fallback for CI/terminal-only use). See [`docs/adr/ADR-014-tts-settings-ui.md`](docs/adr/ADR-014-tts-settings-ui.md).
+- `npm run generate-narration` — generates narration audio for every scenario (same `TTS_PROVIDER` switch applies).
 - `npm run export-video -- <scenario-dir> [...]` — exports a video via the **canonical** path (`scripts/playwright-export.mjs`, drives the live Angular canvas — needs `npm run dev` already running and a real browser). This is also what the Angular app's "Export Video" button runs.
 - `npm run export-video:legacy -- <scenario-dir> [...]` — exports a video via the **legacy** path (`scripts/export-video.mjs`, Node timeline math + Python/Pillow + ffmpeg, no browser needed). Kept specifically as a fallback for environments that can't launch a browser. See [`docs/adr/ADR-012-export-pipeline-pivot-and-cli-consolidation.md`](docs/adr/ADR-012-export-pipeline-pivot-and-cli-consolidation.md) for why both exist.
 

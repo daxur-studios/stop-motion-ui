@@ -1,38 +1,85 @@
 #!/usr/bin/env node
-// Pre-generates narration audio for a replay manifest via Daxur-Daemon's local
-// Chatterbox TTS server (OpenAI-compatible /v1/audio/speech route). See ADR-004
-// for why this is a pre-generation/caching step rather than live in-browser TTS,
-// and ADR-008 for why the cached audio is compressed Ogg/Opus rather than WAV.
+// Pre-generates narration audio for a replay manifest via a pluggable TTS
+// provider. Two providers are supported today: chatterbox (default, local/
+// free) and elevenlabs (cloud/paid). See ADR-013 for the provider split and
+// ADR-014 for the settings-precedence rules below.
+//
+// --- Config precedence (ADR-014) -----------------------------------------
+// Settings are resolved in this order, per field:
+//   1. .local-tts-config.json at repo root (written by the replay-app's
+//      Settings panel via dev-server.mjs — gitignored, can contain a real
+//      ElevenLabs API key)
+//   2. Environment variables (TTS_PROVIDER, CHATTERBOX_TTS_URL,
+//      ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID, ELEVENLABS_MODEL_ID) — the
+//      original config path, still fully supported standalone (CI, or
+//      running this script without ever touching the Settings UI).
+//   3. Hardcoded defaults.
+// `provider` itself follows the same precedence and is independent of which
+// provider has credentials saved — see dev-server.mjs's maskTtsConfig()
+// comment for why switching providers never depends on "does a key exist."
 //
 // Usage:
-//   node scripts/generate-narration.mjs <scenario-dir> [--voice=Abigail.wav] [--seed=42] [--force]
+//   node scripts/generate-narration.mjs <scenario-dir> [--voice=<id>] [--seed=42] [--force]
 //
-// Example:
+// Examples:
 //   node scripts/generate-narration.mjs replay/test-scenarios/scenario-1
+//   TTS_PROVIDER=elevenlabs ELEVENLABS_API_KEY=sk_... \\
+//     node scripts/generate-narration.mjs replay/test-scenarios/scenario-1
+//
+// --voice means different things per provider: a Chatterbox voice-clone
+// reference filename (e.g. "Abigail.wav") for chatterbox, or an ElevenLabs
+// voice_id (e.g. "pNInz6obpgDQGcFmaJgB") for elevenlabs. Each provider falls
+// back to its own sensible default if --voice is omitted.
 //
 // For each event in <scenario-dir>/manifest.json that has a `narrationShort`
-// and/or `narrationLong` text field, this calls the TTS server once per
-// variant present, requesting `response_format: 'opus'` so Chatterbox itself
-// returns a compressed Ogg/Opus stream (no separate transcode step needed —
-// see ADR-008). The result is written as .ogg into <scenario-dir>/narration/,
-// and the matching `narrationAudioShort` / `narrationAudioLong` manifest field
-// is filled in with the relative path. The manifest is rewritten in place.
-//
-// Requires the Chatterbox TTS server to be running and reachable at
-// http://localhost:8004 (either via `docker-compose up chatterbox-tts`, or
-// Daxur-Daemon's daemon-managed local process — see services-manager.ts).
-// Existing audio files are skipped unless --force is passed.
+// and/or `narrationLong` text field, this calls the configured provider once
+// per variant present, and writes the result as Ogg/Opus into
+// <scenario-dir>/narration/. The matching `narrationAudioShort` /
+// `narrationAudioLong` manifest field is filled in with the relative path.
+// The manifest is rewritten in place. Existing audio files are skipped
+// unless --force is passed.
 
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const TTS_URL = 'http://localhost:8004/v1/audio/speech';
-const DEFAULT_VOICE = 'Abigail.wav';
+const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(SCRIPTS_DIR, '..');
+
+// Gitignored local TTS settings file written by the replay-app Settings
+// panel via dev-server.mjs. See ADR-014. Read-only from here — this script
+// never writes to it.
+const LOCAL_TTS_CONFIG_PATH = path.join(ROOT, '.local-tts-config.json');
+
 const DEFAULT_SEED = 42;
+
+// --- chatterbox defaults ---------------------------------------------------
+const CHATTERBOX_DEFAULT_TTS_URL = 'http://localhost:8004/v1/audio/speech';
+const CHATTERBOX_DEFAULT_VOICE = 'Abigail.wav';
+// Chatterbox's OpenAI-compatible endpoint natively supports `response_format:
+// 'opus'` (in addition to 'wav'/'mp3') — it encodes server-side via libsndfile
+// (Ogg container, Opus codec) before the bytes ever leave the TTS server, so
+// no ffmpeg/post-processing step is needed here. See ADR-008.
+const CHATTERBOX_RESPONSE_FORMAT = 'opus';
+const AUDIO_EXT = 'ogg'; // Ogg-encapsulated Opus — plays natively via <audio> in Chrome/Edge/Firefox.
+
+// --- elevenlabs defaults ----------------------------------------------------
+// Defaults below match the ones already used by this user's hermes-agent TTS
+// integration (tools/tts_tool.py: DEFAULT_ELEVENLABS_VOICE_ID /
+// DEFAULT_ELEVENLABS_MODEL_ID) for consistency across tools.
+const ELEVENLABS_API_BASE = process.env.ELEVENLABS_API_URL ?? 'https://api.elevenlabs.io/v1/text-to-speech';
+const ELEVENLABS_DEFAULT_VOICE_ID = 'pNInz6obpgDQGcFmaJgB'; // "Adam"
+const ELEVENLABS_DEFAULT_MODEL_ID = 'eleven_multilingual_v2';
+// codec_sampleRate_bitrate — ElevenLabs' native Opus output, no ffmpeg
+// transcode needed (same no-transcode property Chatterbox's response_format:
+// 'opus' gives us). See ADR-013.
+const ELEVENLABS_OUTPUT_FORMAT = 'opus_48000_64';
 
 function parseArgs(argv) {
   const positional = [];
-  const flags = { voice: DEFAULT_VOICE, seed: DEFAULT_SEED, force: false, audioDir: null, audioBaseUrl: null };
+  // flags.voice intentionally starts as null (not a default string) so each
+  // provider can apply its own provider-appropriate default below.
+  const flags = { voice: null, seed: DEFAULT_SEED, force: false, audioDir: null, audioBaseUrl: null };
   for (const arg of argv) {
     if (arg === '--force') {
       flags.force = true;
@@ -60,40 +107,130 @@ async function fileExists(p) {
   }
 }
 
-// Chatterbox's OpenAI-compatible endpoint natively supports `response_format:
-// 'opus'` (in addition to 'wav'/'mp3') — it encodes server-side via libsndfile
-// (Ogg container, Opus codec) before the bytes ever leave the TTS server, so
-// no ffmpeg/post-processing step is needed here. See ADR-008.
-const RESPONSE_FORMAT = 'opus';
-const AUDIO_EXT = 'ogg'; // Ogg-encapsulated Opus — plays natively via <audio> in Chrome/Edge/Firefox.
+// Reads .local-tts-config.json if present. Returns null on any failure
+// (missing file, invalid JSON) so callers cleanly fall back to env vars —
+// this keeps plain env-var usage (CI, or this script run standalone without
+// ever touching the Settings UI) working with zero config file required.
+async function loadLocalTtsConfig() {
+  try {
+    const raw = await readFile(LOCAL_TTS_CONFIG_PATH, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
-async function synthesize(text, voice, seed) {
-  const res = await fetch(TTS_URL, {
+// Resolves the effective provider + per-provider settings per the
+// precedence in the file header comment: local config file > env vars >
+// hardcoded defaults, decided independently per field. `provider` itself
+// follows the same precedence and is read verbatim from the config file —
+// it is never inferred from "does a key exist for the other provider."
+async function resolveTtsConfig() {
+  const local = await loadLocalTtsConfig();
+
+  const provider = (local?.provider ?? process.env.TTS_PROVIDER ?? 'chatterbox').toLowerCase();
+
+  const chatterboxTtsUrl =
+    local?.chatterbox?.ttsUrl || process.env.CHATTERBOX_TTS_URL || CHATTERBOX_DEFAULT_TTS_URL;
+  const chatterboxDefaultVoice = local?.chatterbox?.voiceId || CHATTERBOX_DEFAULT_VOICE;
+
+  // Never logged, never written anywhere by this script.
+  const elevenlabsApiKey = local?.elevenlabs?.apiKey || process.env.ELEVENLABS_API_KEY || null;
+  const elevenlabsDefaultVoiceId =
+    local?.elevenlabs?.voiceId || process.env.ELEVENLABS_VOICE_ID || ELEVENLABS_DEFAULT_VOICE_ID;
+  const elevenlabsModelId =
+    local?.elevenlabs?.modelId || process.env.ELEVENLABS_MODEL_ID || ELEVENLABS_DEFAULT_MODEL_ID;
+
+  return {
+    provider,
+    configSource: local ? '.local-tts-config.json (env vars fill in any unset fields)' : 'environment variables',
+    chatterbox: { ttsUrl: chatterboxTtsUrl, defaultVoice: chatterboxDefaultVoice },
+    elevenlabs: { apiKey: elevenlabsApiKey, defaultVoiceId: elevenlabsDefaultVoiceId, modelId: elevenlabsModelId },
+  };
+}
+
+async function synthesizeChatterbox(text, voice, seed, cfg) {
+  const res = await fetch(cfg.chatterbox.ttsUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'chatterbox',
       input: text,
       voice,
-      response_format: RESPONSE_FORMAT,
+      response_format: CHATTERBOX_RESPONSE_FORMAT,
       speed: 1.0,
       seed,
     }),
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => '<no body>');
-    throw new Error(`TTS request failed (${res.status}): ${errText}`);
+    throw new Error(`Chatterbox TTS request failed (${res.status}): ${errText}`);
   }
   return Buffer.from(await res.arrayBuffer());
+}
+
+function requireElevenlabsApiKey(cfg) {
+  if (!cfg.elevenlabs.apiKey) {
+    throw new Error(
+      'No ElevenLabs API key found. Save one in the replay-app Settings panel, or set ' +
+      'ELEVENLABS_API_KEY before running with TTS_PROVIDER=elevenlabs. Get a key at https://elevenlabs.io/.'
+    );
+  }
+  return cfg.elevenlabs.apiKey;
+}
+
+async function synthesizeElevenlabs(text, voiceId, seed, cfg) {
+  const apiKey = requireElevenlabsApiKey(cfg);
+  const url = `${ELEVENLABS_API_BASE}/${encodeURIComponent(voiceId)}?output_format=${ELEVENLABS_OUTPUT_FORMAT}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'xi-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      text,
+      model_id: cfg.elevenlabs.modelId,
+      // Best-effort determinism; ElevenLabs doesn't guarantee it. Harmless
+      // to pass even when it has no effect.
+      seed,
+    }),
+  });
+  if (!res.ok) {
+    // Only the response body is logged on failure — never request headers,
+    // so the API key can never leak into console output or logs.
+    const errText = await res.text().catch(() => '<no body>');
+    throw new Error(`ElevenLabs TTS request failed (${res.status}): ${errText}`);
+  }
+  return Buffer.from(await res.arrayBuffer());
+}
+
+async function synthesize(text, voice, seed, cfg) {
+  if (cfg.provider === 'elevenlabs') return synthesizeElevenlabs(text, voice, seed, cfg);
+  if (cfg.provider === 'chatterbox') return synthesizeChatterbox(text, voice, seed, cfg);
+  throw new Error(`Unknown provider "${cfg.provider}" — expected "chatterbox" or "elevenlabs".`);
+}
+
+function resolveDefaultVoice(cfg) {
+  return cfg.provider === 'elevenlabs' ? cfg.elevenlabs.defaultVoiceId : cfg.chatterbox.defaultVoice;
 }
 
 async function main() {
   const { positional, flags } = parseArgs(process.argv.slice(2));
   const scenarioDir = positional[0];
   if (!scenarioDir) {
-    console.error('Usage: node scripts/generate-narration.mjs <scenario-dir> [--voice=Abigail.wav] [--seed=42] [--force]');
+    console.error('Usage: node scripts/generate-narration.mjs <scenario-dir> [--voice=<id>] [--seed=42] [--force]');
     process.exit(1);
   }
+
+  const cfg = await resolveTtsConfig();
+  if (cfg.provider !== 'chatterbox' && cfg.provider !== 'elevenlabs') {
+    console.error(`Unknown provider "${cfg.provider}" — expected "chatterbox" or "elevenlabs".`);
+    process.exit(1);
+  }
+
+  const voice = flags.voice ?? resolveDefaultVoice(cfg);
+  console.log(`[generate-narration] provider=${cfg.provider} voice=${voice} (config source: ${cfg.configSource})`);
 
   const manifestPath = path.join(scenarioDir, 'manifest.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
@@ -130,7 +267,7 @@ async function main() {
       }
 
       console.log(`gen   ${ev.id} [${label}]: "${text.slice(0, 60)}${text.length > 60 ? '…' : ''}"`);
-      const audio = await synthesize(text, flags.voice, flags.seed);
+      const audio = await synthesize(text, voice, flags.seed, cfg);
       await writeFile(absPath, audio);
       ev[audioField] = storedPath;
       generated++;
