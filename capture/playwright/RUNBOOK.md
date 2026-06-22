@@ -28,30 +28,35 @@
 1. **Install deps** (one-time):
 
    ```sh
-   cd replay-app
-   npm install
-
-   cd ../capture/playwright
-   npm install   # postinstall now also runs `npm install --prefix ../../shared`
-                 # (in addition to `playwright install chromium`), so this one
-                 # command is enough — see below for why that's necessary.
+   # from the repo root
+   npm install        # (or: npm run setup — same thing, just a more discoverable name)
    ```
 
-   `capture-session.ts` re-exports `../../../shared/capture-session.ts` via a
-   *relative* import (not through `node_modules/stop-motion-shared`), so
-   Node resolves that file's own `import 'sharp'` starting from `shared/`'s
-   real on-disk location, not from `capture/playwright/node_modules` — see
-   ADR-006 and the comment at the top of `src/capture-session.ts`. Declaring
-   `sharp` in `capture/playwright/package.json` alone doesn't help this
-   import site at all; `sharp` has to actually be installed under
-   `shared/node_modules`. The `postinstall` script's
-   `npm install --prefix ../../shared` step does exactly that automatically,
-   so — unlike before — there's no separate manual `cd ../../shared && npm
-   install` step required any more. If you ever see
-   `Cannot find package 'sharp' imported from .../shared/capture-session.ts`
-   again, it means that postinstall step didn't run (e.g. install was
-   interrupted) — re-run `npm install` in `capture/playwright/`, or run
-   `npm install --prefix ../../shared` directly.
+   This single command is enough for the whole repo. The root `package.json`
+   declares an npm **workspaces** array (`["shared", "capture/playwright",
+   "replay-app"]`), so one `npm install` at the root installs every
+   workspace's dependencies in one pass — `replay-app`'s Angular toolchain,
+   `capture/playwright`'s `playwright`/`sharp`/`tsx`, and `shared`'s own
+   `sharp` dependency — hoisting what it can into the root `node_modules`.
+   `capture/playwright`'s `postinstall` script (`playwright install
+   chromium`) still runs automatically as part of this, same as before.
+
+   History note: an earlier version of this setup required `cd`-ing into
+   each of `replay-app/`, `capture/playwright/`, and (briefly) `shared/`
+   individually and running `npm install` in each — `capture/playwright`'s
+   `package.json` used to additionally chain `npm install --prefix
+   ../../shared` from its own `postinstall` script to cover `shared/`'s
+   `sharp` dependency, since `capture-session.ts` re-exports
+   `../../../shared/capture-session.ts` via a *relative* import (not through
+   `node_modules/stop-motion-shared`) — see ADR-006 and the comment at the
+   top of `src/capture-session.ts` for why that import site specifically
+   needs `sharp` reachable from `shared/`'s own directory, not just from
+   `capture/playwright/node_modules`. Workspaces' single root install
+   satisfies that same requirement directly (via hoisting), making the old
+   multi-folder dance and the extra `--prefix` postinstall step unnecessary.
+   If you ever see `Cannot find package 'sharp' imported from
+   .../shared/capture-session.ts`, it means the root `npm install` hasn't
+   completed — re-run it from the repo root.
 
 2. **Serve the Angular app** (terminal 1):
 

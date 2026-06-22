@@ -34,6 +34,14 @@ Result: looks like a smooth screen recording, but is mostly stills + a cursor ov
 
 Opening `replay/index.html` directly via `file://` may fail to load manifests in Chrome (fetch is blocked cross-origin for the file scheme); serve the `replay/` folder over http instead, e.g. `python3 -m http.server` from inside it, or `npx serve replay`. The Angular app doesn't have this problem — `ng serve` always serves over http.
 
+## Setup
+
+```sh
+npm install
+```
+
+One command, run once from the repo root. The root `package.json` declares an npm **workspaces** array covering `shared/`, `capture/playwright/`, and `replay-app/`, so this single install covers all three sub-packages' dependencies (Angular toolchain, Playwright + sharp, etc.) — no need to `cd` into each subfolder and install separately. (`npm run setup` is an identical, more-discoverable alias for the same command.)
+
 ## Commands
 
 Run from the repo root via `npm run <command>` (forwards to `scripts/cli.mjs` — see that file's header for the full subcommand list, or `node scripts/cli.mjs help`):

@@ -23,6 +23,12 @@
 //                                 (export-video.mjs). No browser required — this is the path to use
 //                                 in a sandboxed/CI/agent environment that can't launch Chromium.
 //                                 See ADR-012 for why both paths are kept.
+//   import-scenario <source-dir> [--scenario=<name>] [--force]
+//                                 Copies an externally-captured manifest.json + screenshots/ (from
+//                                 ANY repo's own CaptureSession-based capture script) into this app's
+//                                 replay-app/public/test-scenarios/ so it can be previewed, narrated,
+//                                 and exported here — the cross-repo adoption bridge. See
+//                                 docs/ADOPTION-GUIDE.md and scripts/import-scenario.mjs.
 //   help                         Show this message.
 
 import { spawn } from 'node:child_process';
@@ -58,6 +64,10 @@ Commands:
   export <scenario-dir> --legacy [...]
                                   Export video — Node/Pillow path, no browser required (sandbox/CI-safe
                                   fallback; see docs/adr/ADR-012).
+  import-scenario <source-dir> [--scenario=<name>] [--force]
+                                  Import an externally-captured manifest + screenshots from any repo
+                                  into this app's test-scenarios/ (cross-repo adoption bridge — see
+                                  docs/ADOPTION-GUIDE.md).
   help                            Show this message.
 `);
 }
@@ -107,6 +117,12 @@ async function main() {
       const args = rest.filter((a) => a !== '--legacy');
       const script = legacy ? 'export-video.mjs' : 'playwright-export.mjs';
       const code = await run('node', [path.join(SCRIPTS_DIR, script), ...args]);
+      process.exit(code);
+      break;
+    }
+
+    case 'import-scenario': {
+      const code = await run('node', [path.join(SCRIPTS_DIR, 'import-scenario.mjs'), ...rest]);
       process.exit(code);
       break;
     }

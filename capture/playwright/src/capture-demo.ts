@@ -395,22 +395,38 @@ async function main(): Promise<void> {
     });
 
     // 3. Counter section — increment twice.
+    //
+    // IMPORTANT — narration must not repeat itself: the two clicks below are
+    // the same physical action performed twice in a row, but they must NOT
+    // get the same narration string twice — see the "Narration authoring
+    // rules" section of docs/demo-readiness-checklist.md. A viewer hearing
+    // "Incrementing the counter... incrementing the counter" back-to-back
+    // immediately clocks it as a templated/robotic voiceover, which breaks
+    // the whole illusion right at the moment it's most noticeable (a number
+    // visibly changing on screen). Fix: read the counter's actual displayed
+    // value after each click and narrate the resulting state in one natural
+    // pass ("...to 1.", "...to 2.") instead of restating the identical verb
+    // phrase every time.
     const incrementBtn = page.locator('[data-testid="demo-counter-increment"]');
+    const counterValue = page.locator('[data-testid="demo-counter-value"]');
     for (let i = 0; i < 2; i++) {
       const cursor = await centerOf(incrementBtn);
       await incrementBtn.click();
       await waitForIdle(page);
+      const count = (await counterValue.textContent())?.trim() || String(i + 1);
       session.addClick({
         target: '[data-testid="demo-counter-increment"]',
         cursor,
-        narrationShort: "Incrementing the counter.",
-        narrationLong: "Clicking the increment button increases the counter value by one.",
+        narrationShort: `Incrementing the counter to ${count}.`,
+        narrationLong:
+          i === 0
+            ? `Clicking the increment button increases the counter value by one, to ${count}.`
+            : `Clicking it again brings the counter up to ${count}.`,
         screenshotRef: await shot(session, page),
       });
     }
 
     // 4. Draw attention to the resulting count with a circle gesture (no click).
-    const counterValue = page.locator('[data-testid="demo-counter-value"]');
     session.addCircle({
       target: '[data-testid="demo-counter-value"]',
       radius: 40,

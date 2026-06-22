@@ -10,11 +10,18 @@
     "url": "https://github.com/daxur-studios/stop-motion-ui.git"
   },
   "scripts": {
+    "setup": "npm install",
     "dev": "node scripts/cli.mjs dev",
     "capture": "node scripts/cli.mjs capture",
     "narrate": "node scripts/cli.mjs narrate",
     "generate-narration": "node scripts/cli.mjs narrate-all",
     "export-video": "node scripts/cli.mjs export",
-    "export-video:legacy": "node scripts/cli.mjs export --legacy"
-  }
+    "export-video:legacy": "node scripts/cli.mjs export --legacy",
+    "import-scenario": "node scripts/cli.mjs import-scenario"
+  },
+  "workspaces": [
+    "shared",
+    "capture/playwright",
+    "replay-app"
+  ]
 }

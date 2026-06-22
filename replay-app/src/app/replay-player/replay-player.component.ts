@@ -208,6 +208,30 @@ function persistNarrationMode(value: 'off' | 'short' | 'long'): void {
   }
 }
 
+// Same rationale as NARRATION_MODE_STORAGE_KEY above — remembers the last
+// scenario picked from the dropdown so a reload doesn't always dump you back
+// on scenario-1. The `?scenario=` URL param (see initialScenarioFromUrl())
+// still takes priority over this on any given load — e.g. export mode always
+// passes one explicitly — this is only the fallback default when no URL
+// param is present.
+const SCENARIO_STORAGE_KEY = 'stop-motion-ui:scenario';
+
+function readPersistedScenario(): string | null {
+  try {
+    return localStorage.getItem(SCENARIO_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function persistScenario(value: string): void {
+  try {
+    localStorage.setItem(SCENARIO_STORAGE_KEY, value);
+  } catch {
+    // Not critical — worst case the choice just doesn't survive a reload.
+  }
+}
+
 @Component({
   selector: 'app-replay-player',
   standalone: true,
@@ -221,7 +245,7 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   // Exposed to the template for the [max] binding.
   readonly Math = Math;
 
-  readonly scenario = signal('scenario-1');
+  readonly scenario = signal(readPersistedScenario() ?? 'scenario-1');
   readonly status = signal('Loading…');
   readonly isPlaying = signal(false);
   readonly currentTimeMs = signal(0);
@@ -1523,6 +1547,7 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   onScenarioChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
     this.scenario.set(value);
+    persistScenario(value);
     this.loadScenario(value);
   }
 

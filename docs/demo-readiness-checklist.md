@@ -39,3 +39,13 @@ Pre-flight checklist for prepping any repo/UI before recording a stop-motion-ui 
 - Use a consistent test account or seeded session state
 - Avoids login flow variance (MFA prompts, first-login onboarding, expired sessions) breaking reproducibility
 - Pre-warm/pre-authenticate session state outside the recorded sequence where possible
+
+## Narration authoring rules
+
+These apply to anyone (human or agent) writing `narrationShort`/`narrationLong` strings for a capture script (e.g. `session.addClick(...)`, `session.addCircle(...)` calls in `capture-demo.ts`). Narration is meant to sound like a person walking through the product, not a templated log message — the fastest way to break that illusion is a repeated phrase.
+
+- **Never repeat the same phrase/clause back-to-back across consecutive steps.** A real bug this caught: a loop that clicked a counter's increment button twice gave both clicks the exact narration string ("Incrementing the counter."), so playback said "Incrementing the counter... incrementing the counter" with nothing else changing — the single most noticeable moment (a number visibly changing on screen) became the exact moment a viewer hears it's not a real person.
+- **When a loop performs the same physical action more than once** (repeated clicks, repeated scrolls, etc.), vary the narration per iteration — read back the actual resulting state (a counter value, a step number, an updated label) and narrate *that*, rather than restating the verb phrase identically each time. "Incrementing the counter to 1." / "Clicking it again brings the counter up to 2." reads as natural; "Incrementing the counter." / "Incrementing the counter." does not.
+- **Describe the resulting state in one natural pass, not two.** Avoid "Incrementing the counter, incrementing the counter to 2" — say the action and the outcome together as a single sentence ("Incrementing the counter to 2.").
+- **Prefer present-progressive, conversational phrasing** ("Opening the dropdown.", "Scrolling down to the dialog trigger.") over clipped log-style fragments, and vary sentence shape between consecutive steps even when the underlying action type repeats (a click, then another click, then another click) so the narration doesn't fall into a sing-song template.
+- When authoring narration for a multi-iteration capture step, write out all the iterations' strings together and read them back to back before committing — if it sounds like a stutter, rewrite it.
