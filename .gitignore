@@ -1,2 +1,10 @@
 ignore/
 voices/
+node_modules/
+dist/
+.angular/cache/
+
+# Local TTS settings (provider choice + ElevenLabs API key) saved by the
+# Settings panel via dev-server.mjs — never commit this, it can contain a
+# real API key. See docs/adr/ADR-014-tts-settings-ui.md.
+.local-tts-config.json

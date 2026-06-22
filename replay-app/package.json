@@ -1,6 +1,13 @@
 {
   "name": "replay-app",
   "version": "0.0.0",
+  "license": "MIT",
+  "author": "Daxur <daxur.studios@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daxur-studios/stop-motion-ui.git",
+    "directory": "replay-app"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

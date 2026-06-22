@@ -1,7 +1,14 @@
 {
   "name": "stop-motion-ui",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
+  "license": "MIT",
+  "author": "Daxur <daxur.studios@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daxur-studios/stop-motion-ui.git"
+  },
   "scripts": {
     "dev": "node scripts/cli.mjs dev",
     "capture": "node scripts/cli.mjs capture",

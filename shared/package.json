@@ -4,6 +4,13 @@
   "private": true,
   "description": "Single source of truth for stop-motion-ui's manifest types and the playwright CaptureSession (manifest bookkeeping + sharp/mozjpeg screenshot compression). Consumed in-repo and by Daxur-Daemon's e2e capture script via a file: dependency — see docs/adr/ADR-006-shared-capture-package.md.",
   "type": "module",
+  "license": "MIT",
+  "author": "Daxur <daxur.studios@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daxur-studios/stop-motion-ui.git",
+    "directory": "shared"
+  },
   "main": "./manifest-types.ts",
   "types": "./manifest-types.ts",
   "exports": {

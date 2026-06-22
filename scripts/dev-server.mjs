@@ -27,11 +27,20 @@ const LOCAL_VOICES_DIR = process.env.LOCAL_VOICES_DIR ?? path.join(ROOT, "ignore
 const NARRATION_DIR = process.env.NARRATION_DIR ?? path.join(ROOT, "ignore", "audio");
 
 // Chatterbox's own voices directory (Docker volume mount). Uploaded files are
-// mirrored here so Chatterbox can find them by filename.
-// Override with CHATTERBOX_VOICES_DIR if your layout differs.
+// mirrored here so Chatterbox can find them by filename. Defaults to an
+// in-repo, gitignored folder so this works out of the box on a fresh clone —
+// override with CHATTERBOX_VOICES_DIR if your Chatterbox instance mounts a
+// different host path (e.g. a sibling Chatterbox-TTS-Server checkout).
 const CHATTERBOX_VOICES_DIR =
   process.env.CHATTERBOX_VOICES_DIR ??
-  path.resolve(ROOT, "..", "..", "_external", "Chatterbox-TTS-Server", "voices");
+  path.resolve(ROOT, "ignore", "chatterbox-voices");
+
+// Gitignored local TTS settings file written by the Settings panel — see
+// docs/adr/ADR-014-tts-settings-ui.md. Holds the active provider plus
+// per-provider settings (including, for ElevenLabs, the API key). This file
+// never leaves this machine and is never echoed back to the browser in
+// plaintext — see maskTtsConfig() below.
+const LOCAL_TTS_CONFIG_PATH = path.join(ROOT, ".local-tts-config.json");
 
 const ALLOWED_VOICE_EXT = new Set([".wav", ".mp3", ".ogg", ".flac", ".m4a"]);
 // No spaces — the filename is passed as a CLI arg and spaces break shell splitting on Windows.
@@ -47,6 +56,173 @@ function scenarioDir(name) {
 // Validate scenario name: must be a simple identifier, no path traversal.
 function isValidScenario(name) {
   return typeof name === "string" && /^[\w-]+$/.test(name) && !name.includes("..");
+}
+
+// ---- local TTS config (provider choice + per-provider settings) ----------
+//
+// Shape on disk:
+//   {
+//     "provider": "chatterbox" | "elevenlabs",
+//     "chatterbox": { "ttsUrl"?: string, "voiceId"?: string },
+//     "elevenlabs": { "apiKey"?: string, "voiceId"?: string, "modelId"?: string }
+//   }
+//
+// `provider` is independent state — it is NOT inferred from "does a key
+// exist." Saved-but-inactive credentials for the other provider just sit
+// here unused until someone switches `provider` back. See ADR-014.
+
+function defaultTtsConfig() {
+  return { provider: "chatterbox", chatterbox: {}, elevenlabs: {} };
+}
+
+async function loadTtsConfig() {
+  try {
+    const raw = await readFile(LOCAL_TTS_CONFIG_PATH, "utf8");
+    const parsed = JSON.parse(raw);
+    return {
+      provider: parsed.provider === "elevenlabs" ? "elevenlabs" : "chatterbox",
+      chatterbox: { ...(parsed.chatterbox ?? {}) },
+      elevenlabs: { ...(parsed.elevenlabs ?? {}) },
+    };
+  } catch {
+    return defaultTtsConfig();
+  }
+}
+
+async function saveTtsConfig(config) {
+  await mkdir(path.dirname(LOCAL_TTS_CONFIG_PATH), { recursive: true });
+  await writeFile(LOCAL_TTS_CONFIG_PATH, JSON.stringify(config, null, 2) + "\n", "utf8");
+}
+
+// Never sends the real API key to the browser, even after it's been saved —
+// only a boolean. This is the ONLY way tts-config data should ever reach the
+// client; the raw `config.elevenlabs.apiKey` value must never be passed to
+// respond() or console.log()'d.
+function maskTtsConfig(config) {
+  return {
+    provider: config.provider,
+    chatterbox: {
+      ttsUrl: config.chatterbox?.ttsUrl ?? null,
+      voiceId: config.chatterbox?.voiceId ?? null,
+    },
+    elevenlabs: {
+      hasApiKey: Boolean(config.elevenlabs?.apiKey),
+      voiceId: config.elevenlabs?.voiceId ?? null,
+      modelId: config.elevenlabs?.modelId ?? null,
+    },
+  };
+}
+
+// Applies a partial update from the Settings panel's POST body onto the
+// existing saved config and persists the result. The API key is special:
+// since GET never echoes the real value back, an empty/omitted
+// `elevenlabs.apiKey` in the POST body always means "leave whatever is
+// already saved unchanged" — the only way to remove a saved key is the
+// explicit `elevenlabs.clearApiKey: true` flag.
+async function applyTtsConfigUpdate(body) {
+  const current = await loadTtsConfig();
+  const next = {
+    provider: current.provider,
+    chatterbox: { ...current.chatterbox },
+    elevenlabs: { ...current.elevenlabs },
+  };
+
+  if (typeof body.provider === "string") {
+    if (body.provider !== "chatterbox" && body.provider !== "elevenlabs") {
+      throw new Error(`Invalid provider "${body.provider}" — expected "chatterbox" or "elevenlabs".`);
+    }
+    next.provider = body.provider;
+  }
+
+  if (body.chatterbox && typeof body.chatterbox === "object") {
+    if (typeof body.chatterbox.ttsUrl === "string") {
+      next.chatterbox.ttsUrl = body.chatterbox.ttsUrl.trim() || undefined;
+    }
+    if (typeof body.chatterbox.voiceId === "string") {
+      next.chatterbox.voiceId = body.chatterbox.voiceId.trim() || undefined;
+    }
+  }
+
+  if (body.elevenlabs && typeof body.elevenlabs === "object") {
+    if (body.elevenlabs.clearApiKey === true) {
+      delete next.elevenlabs.apiKey;
+    } else if (typeof body.elevenlabs.apiKey === "string" && body.elevenlabs.apiKey.trim()) {
+      next.elevenlabs.apiKey = body.elevenlabs.apiKey.trim();
+    }
+    if (typeof body.elevenlabs.voiceId === "string") {
+      next.elevenlabs.voiceId = body.elevenlabs.voiceId.trim() || undefined;
+    }
+    if (typeof body.elevenlabs.modelId === "string") {
+      next.elevenlabs.modelId = body.elevenlabs.modelId.trim() || undefined;
+    }
+  }
+
+  await saveTtsConfig(next);
+  return next;
+}
+
+// Fetches the caller's ElevenLabs voice list server-side (never directly
+// from the browser) so the API key never has to leave this process and the
+// browser never hits ElevenLabs' CORS policy directly. Falls back to
+// ELEVENLABS_API_KEY if no key has been saved via the Settings panel yet,
+// matching generate-narration.mjs's own env-fallback precedence.
+async function fetchElevenlabsVoices() {
+  const config = await loadTtsConfig();
+  const apiKey = config.elevenlabs?.apiKey || process.env.ELEVENLABS_API_KEY;
+  if (!apiKey) {
+    return { ok: false, status: 400, error: "No ElevenLabs API key saved yet — save one in Settings first." };
+  }
+  try {
+    const res = await fetch("https://api.elevenlabs.io/v2/voices?page_size=100", {
+      headers: { "xi-api-key": apiKey },
+    });
+    if (!res.ok) {
+      // Only the response body is logged/returned on failure — never the
+      // request headers — so the API key can never leak via this endpoint.
+      const text = await res.text().catch(() => "<no body>");
+      return { ok: false, status: res.status, error: `ElevenLabs voices request failed (${res.status}): ${text}` };
+    }
+    const data = await res.json();
+    const voices = (data.voices ?? []).map((v) => ({
+      voiceId: v.voice_id,
+      name: v.name,
+      category: v.category ?? null,
+    }));
+    return { ok: true, voices };
+  } catch (err) {
+    return { ok: false, status: 502, error: err.message };
+  }
+}
+
+// Chatterbox's OpenAI-compatible server exposes voice listing at
+// /v1/audio/voices, a sibling of the /v1/audio/speech route used for
+// synthesis (confirmed in Chatterbox-TTS-Server's server.py —
+// `@app.get("/v1/audio/voices")`, returns `{status, voices: [filename, ...]}`).
+// Derives the voices URL from whichever speech URL is currently configured
+// (saved config, else CHATTERBOX_TTS_URL env var, else the same localhost
+// default generate-narration.mjs uses) so this always points at the same
+// server actual synthesis would use.
+function chatterboxVoicesUrl(ttsUrl) {
+  return ttsUrl.replace(/\/v1\/audio\/speech\/?$/, "/v1/audio/voices");
+}
+
+async function fetchChatterboxVoices() {
+  const config = await loadTtsConfig();
+  const ttsUrl =
+    config.chatterbox?.ttsUrl || process.env.CHATTERBOX_TTS_URL || "http://localhost:8004/v1/audio/speech";
+  const voicesUrl = chatterboxVoicesUrl(ttsUrl);
+  try {
+    const res = await fetch(voicesUrl);
+    if (!res.ok) {
+      const text = await res.text().catch(() => "<no body>");
+      return { ok: false, status: res.status, error: `Chatterbox voices request failed (${res.status}): ${text}` };
+    }
+    const data = await res.json();
+    const voices = Array.isArray(data.voices) ? data.voices : [];
+    return { ok: true, voices };
+  } catch (err) {
+    return { ok: false, status: 502, error: `Could not reach Chatterbox at ${voicesUrl}: ${err.message}` };
+  }
 }
 
 // Run a child process, wait for it to exit, return { ok, exitCode, output }.
@@ -121,10 +297,35 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // Serve generated narration audio from the gitignored ignore/audio/ tree.
-  // GET /narration/{scenario}/{filename} — used by the Angular app when audio
-  // was generated with --audio-dir so files live outside Angular's public/ dir.
   if (req.method === "GET") {
+    // GET /api/tts-config — current provider + settings, API key masked to
+    // a boolean. Safe to expose to the browser as-is.
+    if (req.url === "/api/tts-config") {
+      const config = await loadTtsConfig();
+      respond(res, 200, maskTtsConfig(config));
+      return;
+    }
+
+    // GET /api/tts-config/elevenlabs-voices — server-side proxy to
+    // ElevenLabs' voice list using the saved (or env-fallback) API key. The
+    // key itself never appears in this response.
+    if (req.url === "/api/tts-config/elevenlabs-voices") {
+      const result = await fetchElevenlabsVoices();
+      respond(res, result.ok ? 200 : result.status ?? 500, result);
+      return;
+    }
+
+    // GET /api/tts-config/chatterbox-voices — server-side proxy to
+    // Chatterbox's own /v1/audio/voices listing endpoint.
+    if (req.url === "/api/tts-config/chatterbox-voices") {
+      const result = await fetchChatterboxVoices();
+      respond(res, result.ok ? 200 : result.status ?? 500, result);
+      return;
+    }
+
+    // Serve generated narration audio from the gitignored ignore/audio/ tree.
+    // GET /narration/{scenario}/{filename} — used by the Angular app when audio
+    // was generated with --audio-dir so files live outside Angular's public/ dir.
     const match = req.url?.match(/^\/narration\/([^/?#]+)\/([^/?#]+)$/);
     if (match) {
       const [, scenario, filename] = match;
@@ -154,6 +355,22 @@ const server = createServer(async (req, res) => {
   }
 
   const body = await readBody(req);
+
+  if (req.url === "/api/tts-config") {
+    try {
+      const saved = await applyTtsConfigUpdate(body);
+      console.log(
+        `[dev-server] TTS config saved: provider=${saved.provider} ` +
+        `chatterbox.voiceId=${saved.chatterbox.voiceId ?? "(default)"} ` +
+        `elevenlabs.hasApiKey=${Boolean(saved.elevenlabs.apiKey)} ` +
+        `elevenlabs.voiceId=${saved.elevenlabs.voiceId ?? "(default)"}`
+      );
+      respond(res, 200, maskTtsConfig(saved));
+    } catch (err) {
+      respond(res, 400, { error: err.message });
+    }
+    return;
+  }
 
   if (req.url === "/api/voices/upload") {
     const { filename, data } = body;
@@ -256,11 +473,16 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`[dev-server] Listening on http://localhost:${PORT}`);
+  console.log(`[dev-server] GET  /api/tts-config                    -> { provider, chatterbox, elevenlabs: { hasApiKey, ... } }`);
+  console.log(`[dev-server] POST /api/tts-config                    { provider?, chatterbox?: {...}, elevenlabs?: {...} }`);
+  console.log(`[dev-server] GET  /api/tts-config/elevenlabs-voices  -> { voices: [...] } (needs a saved/env API key)`);
+  console.log(`[dev-server] GET  /api/tts-config/chatterbox-voices  -> { voices: [...] }`);
   console.log(`[dev-server] POST /api/narration      { scenario: "scenario-1", voice?, seed?, force? }`);
   console.log(`[dev-server] POST /api/voices/upload  { filename: "my.mp3", data: "<base64>" }`);
   console.log(`[dev-server] POST /api/video          { scenario: "scenario-1", narration?: "short"|"long"|"off", fps?: 30 }`);
   console.log(`[dev-server] Voices (local):      ${LOCAL_VOICES_DIR}  (override with LOCAL_VOICES_DIR)`);
   console.log(`[dev-server] Voices (Chatterbox): ${CHATTERBOX_VOICES_DIR}  (override with CHATTERBOX_VOICES_DIR)`);
   console.log(`[dev-server] Narration audio dir: ${NARRATION_DIR}  (override with NARRATION_DIR)`);
+  console.log(`[dev-server] Local TTS config:    ${LOCAL_TTS_CONFIG_PATH}  (gitignored, see ADR-014)`);
   console.log(`[dev-server] CORS open to http://localhost:4221`);
 });
