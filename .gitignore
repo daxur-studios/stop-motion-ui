@@ -8,3 +8,6 @@ dist/
 # Settings panel via dev-server.mjs — never commit this, it can contain a
 # real API key. See docs/adr/ADR-014-tts-settings-ui.md.
 .local-tts-config.json
+
+__pycache__/
+*.pyc
