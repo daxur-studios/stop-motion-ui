@@ -181,6 +181,33 @@ interface Timeline {
 
 type DevToolStatus = 'idle' | 'running' | 'done' | 'error';
 
+// This is an internal dev tool with a single local user, so a plain
+// localStorage key (rather than e.g. a settings file round-tripped through
+// dev-server.mjs, as the TTS provider config is — see ADR-014) is enough to
+// remember the last-chosen narration length across reloads. 'long' is the
+// default for a first-ever load (no persisted value yet) per the UX
+// decision to make narrated playback the default experience rather than
+// silent playback.
+const NARRATION_MODE_STORAGE_KEY = 'stop-motion-ui:narrationMode';
+
+function readPersistedNarrationMode(): 'off' | 'short' | 'long' {
+  try {
+    const stored = localStorage.getItem(NARRATION_MODE_STORAGE_KEY);
+    if (stored === 'off' || stored === 'short' || stored === 'long') return stored;
+  } catch {
+    // localStorage unavailable (e.g. SSR, privacy mode) — fall through to default.
+  }
+  return 'long';
+}
+
+function persistNarrationMode(value: 'off' | 'short' | 'long'): void {
+  try {
+    localStorage.setItem(NARRATION_MODE_STORAGE_KEY, value);
+  } catch {
+    // Not critical — worst case the choice just doesn't survive a reload.
+  }
+}
+
 @Component({
   selector: 'app-replay-player',
   standalone: true,
@@ -202,7 +229,7 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   readonly speed = signal(1);
   readonly ready = signal(false);
   readonly timeLabel = signal('0.0s / 0.0s');
-  readonly narrationMode = signal<'off' | 'short' | 'long'>('off');
+  readonly narrationMode = signal<'off' | 'short' | 'long'>(readPersistedNarrationMode());
 
   readonly ttsStatus = signal<DevToolStatus>('idle');
   readonly videoStatus = signal<DevToolStatus>('idle');
@@ -1502,6 +1529,7 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   onNarrationChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value as 'off' | 'short' | 'long';
     this.narrationMode.set(value);
+    persistNarrationMode(value);
     this.loadScenario(this.scenario());
   }
 

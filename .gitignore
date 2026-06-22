@@ -13,3 +13,17 @@ __pycache__/
 *.pyc
 
 screenshots/
+
+# Exported demo videos — generated build output (export-video.mjs /
+# playwright-export.mjs, normally triggered via dev-server.mjs's POST
+# /api/video), written by default into each scenario's own directory
+# (e.g. replay-app/public/test-scenarios/{scenario}/export.mp4, or the older
+# replay/test-scenarios/{scenario}/exports/*.mp4). These can get large and
+# are regenerated on demand, so — same rationale as narration audio living
+# under ignore/audio/ instead of public/ — they shouldn't be tracked.
+# NOTE: replay/test-scenarios/scenario-1/exports/scenario-1-short.mp4 is
+# already committed from before this rule existed; this .gitignore entry
+# only stops *new* changes to it from being tracked, it does NOT remove it
+# from git history. To actually untrack it, run (yourself — not Claude):
+#   git rm --cached replay/test-scenarios/scenario-1/exports/scenario-1-short.mp4
+*.mp4
