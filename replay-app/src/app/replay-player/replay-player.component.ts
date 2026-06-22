@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import type { Manifest } from '@shared/manifest-types';
-import { ScriptRunnerService } from '../shared/script-runner.service';
+import { NarrationProgress, ScriptRunnerService } from '../shared/script-runner.service';
 
 // Stop-Motion UI — Replay player, Angular port.
 //
@@ -228,19 +228,83 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   readonly ttsUploadWarning = signal<string | null>(null);
   readonly ttsForce = signal(false);
 
+  /**
+   * Per-clip generation progress for the currently/most-recently running
+   * narration job — polled from GET /api/narration/progress while
+   * ttsStatus() === 'running' (see startTtsProgressPolling()) so the
+   * "Generate TTS" button isn't a black box during a multi-clip batch.
+   * null while idle / before the first poll response arrives.
+   */
+  readonly ttsProgress = signal<NarrationProgress | null>(null);
+  private ttsProgressPollHandle: ReturnType<typeof setInterval> | null = null;
+
   private scripts = inject(ScriptRunnerService);
 
   generateNarration(): void {
     if (this.ttsStatus() === 'running') return;
     this.ttsStatus.set('running');
+    this.ttsProgress.set(null);
+    const scenario = this.scenario();
     const voice =
       this.ttsVoiceMode() === 'custom' ? this.ttsCustomVoice() : this.ttsPremadeVoice();
+    this.startTtsProgressPolling(scenario);
     this.scripts
-      .generateNarration(this.scenario(), { voice: voice || undefined, force: this.ttsForce() })
+      .generateNarration(scenario, { voice: voice || undefined, force: this.ttsForce() })
       .subscribe({
-        next: (r) => this.ttsStatus.set(r.ok ? 'done' : 'error'),
-        error: () => this.ttsStatus.set('error'),
+        next: (r) => {
+          this.ttsStatus.set(r.ok ? 'done' : 'error');
+          // One last poll right away so the final clip statuses (and any
+          // failure details) show up without waiting for the next tick.
+          this.pollTtsProgressOnce(scenario);
+          this.stopTtsProgressPolling();
+        },
+        error: () => {
+          this.ttsStatus.set('error');
+          this.stopTtsProgressPolling();
+        },
       });
+  }
+
+  /** Polls GET /api/narration/progress every 500ms until stopTtsProgressPolling() is called. */
+  private startTtsProgressPolling(scenario: string): void {
+    this.stopTtsProgressPolling();
+    this.pollTtsProgressOnce(scenario);
+    this.ttsProgressPollHandle = setInterval(() => this.pollTtsProgressOnce(scenario), 500);
+  }
+
+  private pollTtsProgressOnce(scenario: string): void {
+    this.scripts.getNarrationProgress(scenario).subscribe({
+      next: (p) => this.ttsProgress.set(p),
+      // A single failed poll shouldn't disrupt the actual generation
+      // request in flight — just skip this tick and try again on the next.
+      error: () => {},
+    });
+  }
+
+  private stopTtsProgressPolling(): void {
+    if (this.ttsProgressPollHandle != null) {
+      clearInterval(this.ttsProgressPollHandle);
+      this.ttsProgressPollHandle = null;
+    }
+  }
+
+  /** True once at least one clip has reported a status — used to show/hide the progress panel. */
+  ttsProgressVisible(): boolean {
+    const p = this.ttsProgress();
+    return this.ttsStatus() === 'running' && !!p && p.clips.length > 0;
+  }
+
+  /** Clips that have settled one way or another (done/skipped/failed) — i.e. no longer pending/running. */
+  ttsProgressDoneCount(): number {
+    const clips = this.ttsProgress()?.clips ?? [];
+    return clips.filter((c) => c.status === 'done' || c.status === 'skipped' || c.status === 'failed').length;
+  }
+
+  ttsProgressPercent(): number {
+    const p = this.ttsProgress();
+    const total = p?.total ?? p?.clips?.length ?? 0;
+    if (!total) return 0;
+    return Math.round((this.ttsProgressDoneCount() / total) * 100);
   }
 
   onVoiceFileChange(event: Event): void {
@@ -352,6 +416,7 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.rafHandle != null) cancelAnimationFrame(this.rafHandle);
     this.stopAllNarration();
+    this.stopTtsProgressPolling();
   }
 
   // ---------- math helpers (unchanged from replay/player.js) ----------
@@ -550,7 +615,14 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
     // timestamp (covers manifests where event[0].timestamp > 0). Stretched
     // if event[0] carries narration that runs longer than that natural gap.
     const firstNarration = narrationFor(first);
-    const firstHoldEnd = Math.max(first.timestamp, firstNarration ? firstNarration.ms : 0);
+    // Defense in depth: a non-finite narration.ms (Infinity/NaN — see the
+    // Content-Length fix in loadScenario()'s narration-loading loop for the
+    // actual source of this) must never reach the timeline math below. One
+    // bad value here makes firstHoldEnd, and therefore every later phase's
+    // t0/t1, Infinity — which is exactly the "stuck after one clip, total
+    // duration shows Infinity" bug.
+    const firstNarrationMs = firstNarration && Number.isFinite(firstNarration.ms) ? firstNarration.ms : 0;
+    const firstHoldEnd = Math.max(first.timestamp, firstNarrationMs);
     phases.push({
       kind: 'show',
       t0: 0,
@@ -766,7 +838,8 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
       // If this step's narration runs longer than its visual action, hold
       // on the arrived-at frame for the difference before moving on.
       const narration = narrationFor(ev);
-      const narrationMs = narration ? narration.ms : 0;
+      // Same non-finite guard as firstNarrationMs above.
+      const narrationMs = narration && Number.isFinite(narration.ms) ? narration.ms : 0;
       const extra = Math.max(0, narrationMs - visualDuration);
 
       // Trigger narration at whichever phase starts this step (move — which
@@ -1018,7 +1091,27 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
               : baseDir + audioRef;
             const el = await this.loadAudioMeta(audioSrc);
             if (el) {
-              narrationMap.set(ev.id, { ms: el.duration * 1000, el });
+              // A freshly-served clip can report `duration: Infinity` (or
+              // NaN) the instant 'loadedmetadata' fires, if the response
+              // came back without a Content-Length header — the browser
+              // can't determine the resource's total length/seekability
+              // up front and treats it as an open-ended stream until
+              // enough has buffered. dev-server.mjs's narration handler
+              // now sets Content-Length explicitly to avoid this at the
+              // source, but guard here too: a non-finite duration must
+              // never reach buildTimeline(), since a single bad value
+              // poisons every phase from that point on (t0/t1 become
+              // Infinity, and findPhaseIndex() then never advances past
+              // that phase — this was the "plays one clip then stops, time
+              // label shows Infinitys" bug). Still keep `el` so the clip
+              // actually plays; just fall back to the text-based estimate
+              // for pacing when the real duration can't be trusted.
+              const ms = Number.isFinite(el.duration)
+                ? el.duration * 1000
+                : text
+                  ? estimateNarrationMs(text)
+                  : 0;
+              narrationMap.set(ev.id, { ms, el });
               elToPath.set(el, audioSrc);
               return;
             }

@@ -222,7 +222,16 @@
     // timestamp (covers manifests where event[0].timestamp > 0). Stretched
     // if event[0] carries narration that runs longer than that natural gap.
     const firstNarration = narrationFor(first);
-    const firstHoldEnd = Math.max(first.timestamp, firstNarration ? firstNarration.ms : 0);
+    // Defense in depth: a non-finite narration.ms (Infinity/NaN — can happen
+    // if loadAudioMeta() below caught the audio element mid-"duration not
+    // yet known" state, e.g. a clip served without Content-Length) must
+    // never reach the timeline math, since one bad value here makes
+    // firstHoldEnd, and therefore every later phase's t0/t1, Infinity —
+    // playback then gets stuck on whichever phase first went infinite and
+    // never advances again. See replay-player.component.ts's identical
+    // guard (the actively-maintained player) for the full writeup.
+    const firstNarrationMs = firstNarration && Number.isFinite(firstNarration.ms) ? firstNarration.ms : 0;
+    const firstHoldEnd = Math.max(first.timestamp, firstNarrationMs);
     phases.push({
       kind: 'show',
       t0: 0,
@@ -357,7 +366,8 @@
       // If this step's narration runs longer than its visual action, hold
       // on the arrived-at frame for the difference before moving on.
       const narration = narrationFor(ev);
-      const narrationMs = narration ? narration.ms : 0;
+      // Same non-finite guard as firstNarrationMs above.
+      const narrationMs = narration && Number.isFinite(narration.ms) ? narration.ms : 0;
       const extra = Math.max(0, narrationMs - visualDuration);
 
       // Trigger narration at whichever phase starts this step (move, else

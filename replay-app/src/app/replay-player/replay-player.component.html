@@ -170,6 +170,36 @@
     @else { Generate TTS }
   </button>
 
+  @if (ttsProgressVisible()) {
+    <div class="tts-progress-modal" role="status" aria-live="polite" data-testid="tts-progress-modal">
+      <div class="tts-progress-header">
+        <span>
+          Generating narration…
+          {{ ttsProgressDoneCount() }} / {{ ttsProgress()?.total ?? ttsProgress()?.clips?.length ?? 0 }}
+        </span>
+      </div>
+      <div class="tts-progress-bar-track">
+        <div class="tts-progress-bar-fill" [style.width.%]="ttsProgressPercent()"></div>
+      </div>
+      <ul class="tts-progress-list">
+        @for (clip of ttsProgress()?.clips ?? []; track clip.id + clip.label) {
+          <li class="tts-progress-item" [class]="'tts-clip-' + clip.status">
+            <span class="tts-clip-icon">
+              @switch (clip.status) {
+                @case ('done') { ✓ }
+                @case ('skipped') { ⏭ }
+                @case ('failed') { ✗ }
+                @case ('running') { ⏳ }
+                @default { ○ }
+              }
+            </span>
+            <span class="tts-clip-label" [title]="clip.error || ''">{{ clip.id }} [{{ clip.label }}]</span>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
   <button
     class="dev-btn"
     [disabled]="videoStatus() === 'running'"

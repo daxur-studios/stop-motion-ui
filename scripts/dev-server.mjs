@@ -26,6 +26,66 @@ const ROOT = path.resolve(SCRIPTS_DIR, "..");
 const LOCAL_VOICES_DIR = process.env.LOCAL_VOICES_DIR ?? path.join(ROOT, "ignore");
 const NARRATION_DIR = process.env.NARRATION_DIR ?? path.join(ROOT, "ignore", "audio");
 
+// In-memory narration-generation progress, per scenario — keyed by scenario
+// name, last-write-wins (a new POST /api/narration for a scenario replaces
+// its previous snapshot). Purely a UI convenience for GET
+// /api/narration/progress; never persisted, lost on dev-server restart.
+// Populated by tailing generate-narration.mjs's stdout for "__PROGRESS__ "
+// lines (see that script's progress-event comments) — NOT by anything
+// generate-narration.mjs writes to disk, so this works even though that
+// script's actual audio/manifest writes are now deferred to a single flush
+// at the very end of its run.
+const narrationProgress = new Map();
+
+function applyProgressEvent(state, evt) {
+  state.updatedAt = Date.now();
+  if (evt.phase === "start") {
+    state.total = evt.total;
+    state.clips = (evt.jobs ?? []).map((j) => ({ id: j.id, label: j.label, status: "pending" }));
+  } else if (evt.phase === "clip") {
+    let clip = state.clips.find((c) => c.id === evt.id && c.label === evt.label);
+    if (!clip) {
+      clip = { id: evt.id, label: evt.label };
+      state.clips.push(clip);
+    }
+    clip.status = evt.status;
+    if (evt.error) clip.error = evt.error;
+  } else if (evt.phase === "end") {
+    state.total = evt.total;
+    state.generated = evt.generated;
+    state.skipped = evt.skipped;
+    state.failed = evt.failed;
+  }
+}
+
+// Wires a fresh progress snapshot for `scenario` and returns an
+// onStdoutChunk callback (for runProcess) that tails the child process's
+// stdout, buffering across chunk boundaries (a "__PROGRESS__ {...}" line can
+// arrive split across two `data` events), and applies any well-formed
+// progress lines it finds to that snapshot as they're emitted — i.e. live,
+// while generate-narration.mjs is still running, not just after it exits.
+function startNarrationProgress(scenario) {
+  const state = { status: "running", total: null, clips: [], startedAt: Date.now(), updatedAt: Date.now() };
+  narrationProgress.set(scenario, state);
+  let buf = "";
+  const onStdoutChunk = (text) => {
+    buf += text;
+    let idx;
+    while ((idx = buf.indexOf("\n")) !== -1) {
+      const line = buf.slice(0, idx);
+      buf = buf.slice(idx + 1);
+      const m = line.match(/^__PROGRESS__ (.+)$/);
+      if (!m) continue;
+      try {
+        applyProgressEvent(state, JSON.parse(m[1]));
+      } catch {
+        // Malformed progress line — ignore, rest of the run is unaffected.
+      }
+    }
+  };
+  return { state, onStdoutChunk };
+}
+
 // NOTE: voice uploads no longer get mirrored into a guessed Chatterbox
 // directory (there used to be a CHATTERBOX_VOICES_DIR for that). That
 // approach silently broke whenever the guessed path didn't match wherever
@@ -290,7 +350,7 @@ async function uploadVoiceToChatterboxServer(filename, buffer) {
 // Run a child process, wait for it to exit, return { ok, exitCode, output }.
 // stdout + stderr are interleaved in insertion order and printed to this
 // process's terminal so the operator can watch progress in real time.
-function runProcess(cmd, args, label) {
+function runProcess(cmd, args, label, { onStdoutChunk } = {}) {
   return new Promise((resolve) => {
     console.log(`\n[dev-server] Starting ${label}:\n  ${cmd} ${args.join(" ")}\n`);
     const lines = [];
@@ -304,6 +364,7 @@ function runProcess(cmd, args, label) {
       const text = buf.toString();
       process.stdout.write(text);
       lines.push(text);
+      onStdoutChunk?.(text);
     });
     child.stderr.on("data", (buf) => {
       const text = buf.toString();
@@ -385,6 +446,18 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // GET /api/narration/progress?scenario=NAME — current in-memory progress
+    // snapshot for that scenario's most recent (or in-flight) generation run.
+    // Meant to be polled (e.g. every 500ms) by the Angular UI while
+    // ttsStatus === 'running'; returns a default idle/empty snapshot for any
+    // scenario that's never been generated this dev-server session.
+    if (req.url?.startsWith("/api/narration/progress")) {
+      const scenario = new URL(req.url, `http://localhost:${PORT}`).searchParams.get("scenario");
+      const state = scenario ? narrationProgress.get(scenario) : null;
+      respond(res, 200, state ?? { status: "idle", total: 0, clips: [] });
+      return;
+    }
+
     // Serve generated narration audio from the gitignored ignore/audio/ tree.
     // GET /narration/{scenario}/{filename} — used by the Angular app when audio
     // was generated with --audio-dir so files live outside Angular's public/ dir.
@@ -400,7 +473,33 @@ const server = createServer(async (req, res) => {
       try {
         const data = await readFile(filePath);
         const mime = { ".ogg": "audio/ogg", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".flac": "audio/flac" }[ext] ?? "application/octet-stream";
-        res.writeHead(200, { "Content-Type": mime, ...corsHeaders() });
+        // Content-Length is set explicitly here — without it, Node defaults
+        // to "Transfer-Encoding: chunked" for any response whose length
+        // isn't declared up front. Browsers can't determine an <audio>
+        // element's seekability/duration from a chunked stream the same way
+        // they can from a length-known resource: Chrome in particular
+        // reports `duration: Infinity` immediately after 'loadedmetadata'
+        // for a freshly-served (uncached) clip served this way, only
+        // correcting itself later via a 'durationchange' event once enough
+        // of the body has buffered — which the player's one-shot
+        // 'loadedmetadata' listener never sees. That Infinity then poisons
+        // the whole replay timeline (see replay-player.component.ts's
+        // buildTimeline() guards), which is what caused "time label shows
+        // Infinitys, playback stalls after one clip" on freshly captured/
+        // freshly generated narration. Declaring Content-Length (and
+        // Accept-Ranges, so the browser can also issue byte-range probes if
+        // it wants to) up front avoids the chunked path entirely, so the
+        // real duration is known immediately. Cached test-scenario clips
+        // mostly dodged this because the browser's disk cache already had
+        // a known byte length from a prior load — it isn't that the bug
+        // only affects fresh captures structurally, just that fresh/
+        // never-before-served clips are the ones still hitting this path.
+        res.writeHead(200, {
+          "Content-Type": mime,
+          "Content-Length": data.length,
+          "Accept-Ranges": "bytes",
+          ...corsHeaders(),
+        });
         res.end(data);
       } catch {
         respond(res, 404, { error: "Audio file not found" });
@@ -503,7 +602,10 @@ const server = createServer(async (req, res) => {
     if (typeof body.voice === "string" && body.voice) args.push(`--voice=${body.voice}`);
     if (typeof body.seed === "number") args.push(`--seed=${body.seed}`);
     if (body.force === true) args.push("--force");
-    const result = await runProcess("node", args, `TTS for ${scenario}`);
+    const { state, onStdoutChunk } = startNarrationProgress(scenario);
+    const result = await runProcess("node", args, `TTS for ${scenario}`, { onStdoutChunk });
+    state.status = result.ok ? "done" : "error";
+    state.finishedAt = Date.now();
     respond(res, result.ok ? 200 : 500, result);
     return;
   }
@@ -556,6 +658,7 @@ server.listen(PORT, () => {
   console.log(`[dev-server] GET  /api/tts-config/elevenlabs-voices  -> { voices: [...] } (needs a saved/env API key)`);
   console.log(`[dev-server] GET  /api/tts-config/chatterbox-voices  -> { voices: [...] }`);
   console.log(`[dev-server] POST /api/narration      { scenario: "scenario-1", voice?, seed?, force? }`);
+  console.log(`[dev-server] GET  /api/narration/progress?scenario=scenario-1  -> { status, total, clips: [...] }`);
   console.log(`[dev-server] POST /api/voices/upload  { filename: "my.mp3", data: "<base64>" }`);
   console.log(`[dev-server] POST /api/video          { scenario: "scenario-1", narration?: "short"|"long"|"off", fps?: 30 }`);
   console.log(`[dev-server] Voices (local):      ${LOCAL_VOICES_DIR}  (override with LOCAL_VOICES_DIR)`);

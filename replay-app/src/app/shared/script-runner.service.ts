@@ -6,6 +6,28 @@ const DEV_SERVER = 'http://localhost:3001';
 
 export type ScriptResult = { ok: boolean; exitCode: number | null; output: string };
 
+// Mirrors dev-server.mjs's GET /api/narration/progress response shape
+// (itself built by applyProgressEvent() from generate-narration.mjs's
+// "__PROGRESS__ {...}" stdout lines). Polled while ttsStatus === 'running' to
+// drive the per-clip progress UI.
+export type NarrationClipStatus = 'pending' | 'running' | 'done' | 'skipped' | 'failed';
+
+export type NarrationClipProgress = {
+  id: string;
+  label: 'short' | 'long';
+  status: NarrationClipStatus;
+  error?: string;
+};
+
+export type NarrationProgress = {
+  status: 'idle' | 'running' | 'done' | 'error';
+  total: number | null;
+  clips: NarrationClipProgress[];
+  generated?: number;
+  skipped?: number;
+  failed?: number;
+};
+
 // Mirrors dev-server.mjs's maskTtsConfig() shape exactly — the real
 // ElevenLabs API key never appears here, only `hasApiKey`. See ADR-014.
 export type TtsConfig = {
@@ -68,6 +90,12 @@ export class ScriptRunnerService {
     options?: { voice?: string; seed?: number; force?: boolean },
   ): Observable<ScriptResult> {
     return this.http.post<ScriptResult>(`${DEV_SERVER}/api/narration`, { scenario, ...options });
+  }
+
+  getNarrationProgress(scenario: string): Observable<NarrationProgress> {
+    return this.http.get<NarrationProgress>(`${DEV_SERVER}/api/narration/progress`, {
+      params: { scenario },
+    });
   }
 
   exportVideo(scenario: string, narration: 'short' | 'long' | 'off' = 'short', fps = 30): Observable<ScriptResult> {

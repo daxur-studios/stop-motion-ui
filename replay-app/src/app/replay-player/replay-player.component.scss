@@ -207,6 +207,77 @@ select {
   }
 }
 
+// Per-clip narration generation progress — shown inline next to the
+// "Generate TTS" button while ttsStatus() === 'running'. See
+// ttsProgressVisible()/ttsProgress() in replay-player.component.ts and
+// GET /api/narration/progress in dev-server.mjs.
+.tts-progress-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--mat-sys-surface-container-high);
+  border: 1px solid var(--mat-sys-outline-variant);
+}
+
+.tts-progress-header {
+  font-size: 11px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tts-progress-bar-track {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--mat-sys-surface-dim);
+  overflow: hidden;
+}
+
+.tts-progress-bar-fill {
+  height: 100%;
+  background: var(--mat-sys-tertiary);
+  transition: width 0.2s ease-out;
+}
+
+.tts-progress-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 140px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tts-progress-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tts-clip-icon {
+  width: 14px;
+  text-align: center;
+  flex: none;
+}
+
+.tts-clip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tts-clip-done .tts-clip-icon { color: var(--mat-sys-tertiary); }
+.tts-clip-failed { color: var(--mat-sys-error); }
+.tts-clip-failed .tts-clip-icon { color: var(--mat-sys-error); }
+.tts-clip-running .tts-clip-icon { color: var(--mat-sys-tertiary); }
+.tts-clip-skipped { opacity: 0.6; }
+
 // Playwright export mode — activated by ?export=1 URL param.
 // Hides all chrome so only the 1280×800 canvas is visible, and forces the
 // canvas to its exact pixel dimensions so screenshots are always 1280×800.

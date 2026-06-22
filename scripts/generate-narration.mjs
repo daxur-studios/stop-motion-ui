@@ -238,45 +238,123 @@ async function main() {
   // serve doesn't hot-reload on each clip. Paired with --audio-base-url which
   // becomes the URL prefix stored in the manifest (absolute, served by dev-server).
   const narrationDir = flags.audioDir ?? path.join(scenarioDir, 'narration');
-  await mkdir(narrationDir, { recursive: true });
 
-  let generated = 0;
-  let skipped = 0;
-
+  // Build the full job list up front so `total` (and every clip's identity)
+  // is known before any work starts — lets callers (dev-server.mjs's progress
+  // endpoint) show every clip as a "pending" slot immediately, instead of
+  // clips popping into existence one at a time.
+  const jobs = [];
   for (const ev of manifest.events ?? []) {
-    const variants = [
+    for (const [textField, audioField, label] of [
       ['narrationShort', 'narrationAudioShort', 'short'],
       ['narrationLong', 'narrationAudioLong', 'long'],
-    ];
-
-    for (const [textField, audioField, label] of variants) {
+    ]) {
       const text = ev[textField];
       if (!text) continue;
-
       const fileName = `${ev.id}-${label}.${AUDIO_EXT}`;
       // When --audio-base-url is provided, store an absolute URL so the browser
       // can fetch audio from the dev-server instead of Angular's asset path.
       const storedPath = flags.audioBaseUrl ? `${flags.audioBaseUrl}/${fileName}` : `narration/${fileName}`;
       const absPath = path.join(narrationDir, fileName);
+      jobs.push({ ev, audioField, label, text, fileName, storedPath, absPath });
+    }
+  }
+
+  const total = jobs.length;
+  // Machine-parseable progress lines, consumed by dev-server.mjs's
+  // POST /api/narration handler (which tails this script's stdout) and
+  // exposed to the Angular UI via GET /api/narration/progress. Plain prefix
+  // + single-line JSON, easy to grep out of the human-readable lines around
+  // it. See dev-server.mjs's applyProgressEvent().
+  console.log(
+    `__PROGRESS__ ${JSON.stringify({ phase: 'start', total, jobs: jobs.map((j) => ({ id: j.ev.id, label: j.label })) })}`,
+  );
+
+  // Generated audio is held in memory (Buffer + destination path) and only
+  // written to disk in flush(), below — once, after the whole batch finishes
+  // (successfully or not). Previously each clip was written to disk the
+  // moment it finished synthesizing; even though narrationDir is normally
+  // redirected outside Angular's watched public/ tree via --audio-dir, this
+  // removes the per-clip disk write entirely as a structural fix, so a
+  // mid-batch reload can't happen here regardless of where narrationDir
+  // happens to point (e.g. when this script is run standalone, without
+  // --audio-dir, and narrationDir IS the watched <scenarioDir>/narration/).
+  const pendingWrites = [];
+  const failures = [];
+  let generated = 0;
+  let skipped = 0;
+
+  async function flush() {
+    if (pendingWrites.length > 0) {
+      await mkdir(narrationDir, { recursive: true });
+      for (const { absPath, audio } of pendingWrites) {
+        await writeFile(absPath, audio);
+      }
+    }
+    // Manifest is rewritten exactly once, here, alongside the audio flush —
+    // never per-clip.
+    await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+  }
+
+  try {
+    let index = 0;
+    for (const job of jobs) {
+      index++;
+      const { ev, audioField, label, text, absPath, storedPath } = job;
 
       if (!flags.force && (await fileExists(absPath))) {
         ev[audioField] = storedPath;
         skipped++;
         console.log(`skip  (exists) ${ev.id} [${label}]`);
+        console.log(
+          `__PROGRESS__ ${JSON.stringify({ phase: 'clip', index, total, id: ev.id, label, status: 'skipped' })}`,
+        );
         continue;
       }
 
       console.log(`gen   ${ev.id} [${label}]: "${text.slice(0, 60)}${text.length > 60 ? '…' : ''}"`);
-      const audio = await synthesize(text, voice, flags.seed, cfg);
-      await writeFile(absPath, audio);
-      ev[audioField] = storedPath;
-      generated++;
+      console.log(
+        `__PROGRESS__ ${JSON.stringify({ phase: 'clip', index, total, id: ev.id, label, status: 'running' })}`,
+      );
+      try {
+        const audio = await synthesize(text, voice, flags.seed, cfg);
+        pendingWrites.push({ absPath, audio });
+        ev[audioField] = storedPath;
+        generated++;
+        console.log(
+          `__PROGRESS__ ${JSON.stringify({ phase: 'clip', index, total, id: ev.id, label, status: 'done' })}`,
+        );
+      } catch (err) {
+        // Don't let one bad clip take down the rest of the batch, and don't
+        // touch ev[audioField] — leave whatever was already there (existing
+        // audio from a previous successful run, or nothing) rather than
+        // pointing the manifest at a clip that doesn't exist on disk.
+        failures.push({ id: ev.id, label, error: err.message });
+        console.error(`FAILED ${ev.id} [${label}]: ${err.message}`);
+        console.log(
+          `__PROGRESS__ ${JSON.stringify({ phase: 'clip', index, total, id: ev.id, label, status: 'failed', error: err.message })}`,
+        );
+      }
     }
+  } finally {
+    // Always flush whatever succeeded so far — even if something thrown from
+    // outside the per-clip try/catch above (a bug, an out-of-memory, Ctrl+C
+    // racing the loop) unwinds past this point, already-generated clips are
+    // not silently discarded.
+    await flush();
   }
 
-  await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
-  console.log(`\nDone. Generated ${generated} clip(s), skipped ${skipped} existing clip(s).`);
+  console.log(`\nDone. Generated ${generated} clip(s), skipped ${skipped} existing clip(s), failed ${failures.length}.`);
   console.log(`Manifest updated: ${manifestPath}`);
+  console.log(
+    `__PROGRESS__ ${JSON.stringify({ phase: 'end', total, generated, skipped, failed: failures.length, failures })}`,
+  );
+
+  if (failures.length > 0) {
+    console.error(`\n${failures.length} clip(s) failed:`);
+    for (const f of failures) console.error(`  - ${f.id} [${f.label}]: ${f.error}`);
+    process.exit(1);
+  }
 }
 
 main().catch((err) => {

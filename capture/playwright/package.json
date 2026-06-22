@@ -12,12 +12,11 @@
     "directory": "capture/playwright"
   },
   "scripts": {
-    "postinstall": "npm install --prefix ../../shared && playwright install chromium",
+    "postinstall": "playwright install chromium",
     "capture:demo": "tsx src/capture-demo.ts",
     "dry-run": "tsx dry-run/dry-run.ts"
   },
   "dependencies": {
-    "stop-motion-shared": "file:../../shared",
     "playwright": "^1.50.0",
     "sharp": "^0.34.5"
   },

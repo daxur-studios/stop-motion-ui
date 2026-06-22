@@ -64,6 +64,49 @@ const ANGULAR_ORIGIN = 'http://localhost:4221';
 // can render the canvas at its full pixel dimensions for 1:1 screenshots.
 const VIEWPORT = { width: 1280, height: 820 };
 
+// Must match dev-server.mjs's NARRATION_DIR default exactly (same ROOT, same
+// override env var) — that's where generate-narration.mjs actually writes
+// audio files when invoked via the redirected --audio-dir flow (see
+// dev-server.mjs's POST /api/narration handler). The manifest's
+// narrationAudioShort/Long fields only store the *browser-playback* URL for
+// those clips (http://localhost:3001/narration/{scenario}/{filename}), not
+// their on-disk location — resolveAudioPath() below maps one back to the
+// other.
+const NARRATION_DIR = process.env.NARRATION_DIR ?? path.join(ROOT, 'ignore', 'audio');
+
+// audioEvents[].path (built by replay-player.component.ts's loadScenario(),
+// passed through to __stopMotion._audioEvents) is whatever URL/path the
+// browser used to actually fetch+play the clip — which is one of two shapes:
+//
+//   1. An absolute dev-server URL, e.g.
+//      "http://localhost:3001/narration/demo-gallery/nav-1-long.ogg" — used
+//      for any clip generated via the redirected --audio-dir/--audio-base-url
+//      flow (the current scheme for every scenario, fresh or canned; see
+//      generate-narration.mjs/dev-server.mjs). This is a browser-playback
+//      URL, not a filesystem path — naively path.join()-ing it onto
+//      scenarioDir (the old behavior here) produced garbage like
+//      ".../demo-gallery/http:/localhost:3001/narration/demo-gallery/..."
+//      (the literal string "http:" and "localhost:3001" end up as bogus path
+//      segments), which is exactly the broken ffmpeg -i path reported. The
+//      real on-disk file lives under NARRATION_DIR/{scenario}/{filename}.
+//   2. A path relative to the scenario's own public/ directory (the older,
+//      now-unused inline-narration scheme, e.g. "narration/nav-1-short.ogg")
+//      — still resolved the original way, directly under scenarioDir.
+function resolveAudioPath(scenarioDir, audioPath) {
+  if (audioPath.startsWith('http://') || audioPath.startsWith('https://')) {
+    const { pathname } = new URL(audioPath);
+    const match = pathname.match(/^\/narration\/([^/]+)\/([^/]+)$/);
+    if (match) {
+      const [, scenario, filename] = match;
+      return path.join(NARRATION_DIR, scenario, filename);
+    }
+    // Unknown absolute-URL shape we don't recognize — fall through rather
+    // than guess; this will fail loudly (ffmpeg "no such file") instead of
+    // silently mis-resolving to something that happens to exist.
+  }
+  return path.join(scenarioDir, audioPath);
+}
+
 function parseArgs(argv) {
   const positional = [];
   const flags = { fps: 30, narration: 'short', out: null };
