@@ -112,6 +112,8 @@ type MovePhase = {
   to: { x: number; y: number };
   screenshot: string;
   jitter: MoveJitter;
+  /** Repositioning before a scroll/wait is not a click. */
+  clickFeedback?: boolean;
   narration?: HTMLAudioElement | null;
 };
 type CirclePhase = {
@@ -532,6 +534,13 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
           this.render();
           return Promise.resolve();
         },
+        // Export-only diagnostics for continuity checks; not the recipe API.
+        cursorTimeline: () => (this.timeline?.phases ?? []).map(phase => ({
+          kind: phase.kind, t0: phase.t0, t1: phase.t1,
+          start: this.sampleAt([phase], phase.t0),
+          middle: this.sampleAt([phase], (phase.t0 + phase.t1) / 2),
+          end: this.sampleAt([phase], phase.t1),
+        })),
       };
     }
 
@@ -782,18 +791,27 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
       let scrollPhaseRef: ScrollPhase | null = null;
       let asyncWaitPhaseRef: AsyncWaitPhase | null = null;
 
+      // Sampled-background phases keep the pointer still, but their recorded
+      // position may differ from the last displayed point (notably after a
+      // circle, whose exit is on its circumference). Arrive before parking;
+      // a stationary phase must never silently reset the pointer position.
+      if ((ev.type === 'asyncWait' || (ev.type === 'scroll' && ev.frames && ev.frames.length > 1)) &&
+          Math.hypot(ev.cursor.x - prev.x, ev.cursor.y - prev.y) > 0) {
+        const moveDur = MOVE_MIN_MS;
+        movePhaseRef = {
+          kind: 'move', t0: prev.t, t1: prev.t + moveDur,
+          from: { x: prev.x, y: prev.y }, to: { x: ev.cursor.x, y: ev.cursor.y },
+          screenshot: prev.screenshot, jitter: moveJitter(), clickFeedback: false,
+        };
+        phases.push(movePhaseRef);
+        prev = { ...prev, x: ev.cursor.x, y: ev.cursor.y, t: prev.t + moveDur };
+        visualDuration += moveDur;
+      }
+
       if (ev.type === 'asyncWait') {
-        // No move-in glide at all (unlike the clamped default branch below)
-        // — the cursor is already exactly where it needs to be (the wait-
-        // triggering click's position, reused verbatim as this event's
-        // cursor — see capture-demo.ts's step 11), so there's nothing to
-        // glide toward. This mirrors player.js's identical special case;
-        // see that file's buildTimeline() comment for the full reasoning
-        // (this event's raw `ev.timestamp - prevManifestEnd` gap bakes in
-        // the entire real wait, which the MOVE_MIN_MS/MOVE_MAX_MS clamp
-        // below would otherwise still turn into an unnecessary ~2.2s glide
-        // phase rather than true dead air — harmless given from === to, but
-        // wasted regardless).
+        // The usual wait reuses its triggering click's position and needs no
+        // move. A different requested position has already been reached above.
+        // Never derive an approach duration from the long real wait itself.
         const t1 = prev.t + ev.frameDurationMs;
         // "Sped up" badge — only when real compression actually happened.
         // After CaptureSession.addAsyncWait()'s clamp, frameDurationMs can
@@ -1374,7 +1392,7 @@ export class ReplayPlayerComponent implements AfterViewInit, OnDestroy {
     // 'move' phases were ever used to approach anything but a real click.
     for (let i = 0; i < phases.length; i++) {
       const phase = phases[i];
-      if (phase.kind !== 'move') continue;
+      if (phase.kind !== 'move' || phase.clickFeedback === false) continue;
       if (phases[i + 1]?.kind === 'circle') continue;
       const arrivalT = phase.t1;
       const age = t - arrivalT;

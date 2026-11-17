@@ -1,4 +1,5 @@
 ignore/
+/artifacts/
 voices/
 node_modules/
 dist/

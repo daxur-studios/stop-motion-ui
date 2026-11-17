@@ -1,5 +1,7 @@
 # Adoption Guide: using stop-motion-ui from another repo
 
+> For the current installed-package workflow, use [Agent video demos](agent-cli.md) and the packaged adoption skill. The CLI manages capture and the bundled renderer from the consuming repository. The manual shared-package/copy-in workflow below is retained for existing integrations.
+
 This guide is for taking the core idea of this project — capture sparse
 screenshots + a metadata stream, then replay them with a faked animated
 cursor instead of recording real video — and using it from a **separate**

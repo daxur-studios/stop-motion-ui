@@ -1,6 +1,6 @@
 # Stop-Motion UI
 
-A POC for recording lightweight "replays" of UI interactions — without expensive video/gif capture.
+Create narrated MP4 walkthroughs from UI screenshots or continuous browser gameplay, with a paced cursor and accelerated waits.
 
 ## Core idea
 
@@ -9,11 +9,11 @@ A POC for recording lightweight "replays" of UI interactions — without expensi
 - On playback, render a **fake animated cursor** that moves smoothly between recorded points (bezier easing, not linear)
 - Sync whichever screenshot is "current" to the timeline as the cursor moves
 
-Result: looks like a smooth screen recording, but is mostly stills + a cursor overlay — much smaller storage footprint than video/gif.
+MP4 is the primary output; recipients need no replay app. `defineDemo` reconstructs event-timed screenshots with cursor motion and optional narration, using a privately served bundled renderer. `defineVideo` records continuous browser footage with timed input and explicit speed segments. The installed command and skill manage both modes for agents working in other repositories. Stop Motion remains separate from `triangular-engine/testing` test-result recordings.
 
 ## Why
 
-- Video/gif capture of UI walkthroughs is heavy (storage, encoding, playback)
+- A reconstructed walkthrough can be smaller and easier to revise than a conventional capture, while MP4 export is available when a video artifact is needed
 - Most of a UI recording is static frames between discrete actions — recording every pixel of every frame is wasteful
 - A manifest + screenshots + animated cursor can fake the "recording" feel at a fraction of the size
 
@@ -26,15 +26,30 @@ Result: looks like a smooth screen recording, but is mostly stills + a cursor ov
 
 ## Status
 
-- **Replay player** (`replay/index.html` + `replay/player.js`): **deprecated, kept as a no-build-step fallback — see `docs/roadmap.md`'s "Maintenance note" and the file's own header comment.** Loads a manifest + screenshots, animates a fake cursor along bezier-eased curves between recorded points, handles `circle` gestures as an orbiting motion, and has play/pause/scrub/speed controls plus a scenario picker. It no longer receives new features (it's missing the ADR-011 sped-up-indicator badge, for example) and may drift further from the Angular player below.
-- **Replay player, Angular wrapper** (`replay-app/`): **the actively maintained player.** Same manifest loading + bezier/easing + circle-orbit math `replay/player.js` originally had, now extended independently in `ReplayPlayerComponent`. Angular 20.3.17, standalone components, zoneless change detection — matches the version used by sibling playground apps (`people-simulator`, `convo-scene`). Runs on port 4221 (`npm run dev` from the repo root starts this alongside the companion dev-server — see "Commands" below). Test scenarios are duplicated under `replay-app/public/test-scenarios/` (served as static assets) so the original `replay/test-scenarios/` fixtures stay intact.
-- **Capture (chrome-mcp):** manifest-building logic proven via dry-run with synthetic data; no real screenshots yet.
-- **Phase 1 (now):** click + navigate capture only, full capture → manifest → replay loop end-to-end at minimal scope
-- **Phase 2 (later):** scroll/drag capture, animation-burst capture (multiple frames during a transition)
+- **Replay player:** `replay-app/` is the maintained Angular player, with narration, settings, seeded cursor motion, async-wait and scroll presentation support. The plain-JS player (`replay/index.html` + `replay/player.js`) remains a deprecated no-build-step fallback.
+- **Capture:** both a Chrome MCP capture guide and an unattended Playwright capture script exist. The Playwright demo covers navigation, clicks, forms, scrolling, dialogs and async waits, and stages output outside the watched app folder. The capture runbook says its complete live-browser loop still needs a fresh end-to-end confirmation; the Chrome MCP runbook also records no live capture.
+- **Output:** MP4 export is available through the canonical Playwright-driven canvas path and a legacy browser-free renderer. The installed agent workflow supports `daxurSpeech()` for Daxur Gemini narration or supplied clips; the older source narration workflow supports Chatterbox and ElevenLabs.
+- **Integration boundary:** this remains a separate Stop Motion UI tool. It has an import path for manifest-plus-screenshot scenarios, but no adapter from `triangular-engine/testing` WebM result artifacts. See [Plan 002](docs/plans/002_testing-video-workflows.md) for the exploration.
+
+The original POC has therefore grown into a substantial prototype, but its documented live-capture verification and integration into test-result workflows remain open.
 
 Opening `replay/index.html` directly via `file://` may fail to load manifests in Chrome (fetch is blocked cross-origin for the file scheme); serve the `replay/` folder over http instead, e.g. `python3 -m http.server` from inside it, or `npx serve replay`. The Angular app doesn't have this problem — `ng serve` always serves over http.
 
 ## Setup
+
+For use from **another repository**, install the local packed package and follow
+the [agent CLI guide](docs/agent-cli.md). The installed `stop-motion-ui` command
+provides `doctor`, `run`, `capture` and `render`; it privately serves the bundled
+renderer and produces MP4 without a manually started replay app. The package
+includes the [adoption skill](skills/adopt-stop-motion-capture/SKILL.md).
+
+Version 0.3.0 adds `defineVideo` for continuous animation/game footage, alongside
+`defineDemo` for screenshot reconstruction. Both use the same CLI. Continuous
+recipes name segments, await paced input and mark long waits with `speed: 3` or
+`5`; captions, speed badges and normal-rate narration are included in the MP4.
+See [continuous recipes](docs/agent-cli.md#continuous-games-and-animation).
+
+The commands below describe maintaining this source checkout.
 
 ```sh
 npm install

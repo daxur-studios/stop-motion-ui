@@ -1,5 +1,21 @@
 # Roadmap / Future Ideas
 
+## Curated video treatments and daily development stories — planned
+
+[Plan 006](plans/006_curated-video-templates.md) curates vertical shorts, desktop showcases and matched comparisons on the existing recipe workflow. Start with two treatments of one real scenario. A later fixture-driven exploration covers narrated development-day stories from cross-provider session and Git evidence supplied by Æ, including parallel work, handovers and honestly labelled usage coverage. No recap adapter or template implementation exists yet.
+
+## Reusable continuous video recipes — 0.3.0
+
+`defineVideo` now packages the continuous page recorder, timed pointer input, captions, speed badges, narration preparation/holds and direct final encoding. The same installed `run/capture/render` commands support both recipe modes. Source JPEG timestamps and `timeline.json` retain source/output mapping. Plan 005 tracks real consumer adoption and verification. This does not add an adapter to `triangular-engine/testing` result recordings.
+
+## Compact delivery and cursor continuity — local implementation
+
+Version 0.2.1 defaults the installed CLI to HEVC/hvc1 with AAC after the owner's phone playback confirmation; `--codec h264` remains available. The maintained renderer glides into changed-position waits and animated scrolls, including after circle gestures. The game-local continuous pilot established timed real input, matching initial pointer positions and click-at-arrival. The owner accepted the smoother pilot on 2026-11-06; Plan 005 packages that approach. See [Plan 004](plans/004_coherent-cursor-compact-delivery.md) for its evidence.
+
+## Agent-operated video workflow — implemented locally, remote rehearsal pending
+
+The packaged `@daxur-studios/stop-motion-ui` CLI provides `doctor`, `run`, `capture` and `render`, a Playwright recipe API, supplied/external cached narration, isolated artifact folders and a bundled renderer that needs no manually started replay app. Local tarball use and the real `@daxur-studios/ui` pilot are tracked in [Plan 003](plans/003_agent-video-demo-workflow.md). Read [the installed CLI guide](agent-cli.md). Codex phone playback is user-confirmed. The `daxurSpeech()` adapter now uses the supported Gemini speech command; credentials and provider caching stay in Daxur. Human listening acceptance and a full remote coding rehearsal remain open.
+
 See also: [`docs/agent-maintainability.md`](./agent-maintainability.md) — what it takes for an AI agent to verify its own changes to this codebase without a human checking screenshots, what's missing today, and concrete next steps.
 
 ## Feature: Headless video export — ✅ Done (now two pipelines — see ADR-012)

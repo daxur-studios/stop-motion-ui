@@ -1,8 +1,38 @@
 {
-  "name": "stop-motion-ui",
-  "version": "0.1.0",
+  "name": "@daxur-studios/stop-motion-ui",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "stop-motion-ui": "bin/stop-motion-ui.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.mjs",
+      "default": "./lib/index.mjs"
+    }
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "dist/",
+    "skills/adopt-stop-motion-capture/",
+    "examples/",
+    "docs/agent-cli.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "dependencies": {
+    "playwright": "^1.56.1",
+    "sharp": "^0.35.5",
+    "tsx": "^4.20.6"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12"
+  },
   "license": "MIT",
   "author": "Daxur <daxur.studios@gmail.com>",
   "repository": {
@@ -10,6 +40,9 @@
     "url": "https://github.com/daxur-studios/stop-motion-ui.git"
   },
   "scripts": {
+    "build:package": "node scripts/build-package.mjs",
+    "prepack": "npm run build:package",
+    "test": "node --test tests/*.test.mjs",
     "setup": "npm install",
     "dev": "node scripts/cli.mjs dev",
     "capture": "node scripts/cli.mjs capture",

@@ -1,5 +1,7 @@
 # AI-Agent Maintainability
 
+> Current local verification: the installed CLI now manages the bundled browser renderer, and `npm test` exercises real capture/render, narration caching, reruns and timeout cleanup. Chromium and ffmpeg are available on the development laptop. The environment restrictions described below are historical sandbox findings; use `stop-motion-ui doctor --json` to check the actual machine. See [ER 003](engineering-records/003_agent-video-demo-workflow.md).
+
 A reference doc on what it currently takes for an AI coding agent (not a human) to make a change to this codebase and actually know whether it worked, without a human in the loop checking screenshots or running the app by hand. Written against the post-ADR-010 architecture (video export primary, live players debug-only); updated for the ADR-012 export-pipeline pivot (see the new "Canonical export path now requires a browser" point below — this is a real, newly-introduced regression in what's verifiable here, not yet fully mitigated).
 
 ## Why this matters

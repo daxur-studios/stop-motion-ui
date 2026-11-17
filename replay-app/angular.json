@@ -42,6 +42,14 @@
             "styles": ["src/styles.scss"]
           },
           "configurations": {
+            "package": {
+              "assets": [],
+              "outputPath": "../dist/renderer",
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "extractLicenses": true
+            },
             "production": {
               "budgets": [
                 {
